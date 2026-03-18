@@ -33,31 +33,31 @@ export default function WorkoutsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Workouts</h1>
-        <p className="text-gray-500 mt-1 text-sm">Log and track your training sessions</p>
+      <div className="mb-8 sm:mb-10">
+        <h1 className="text-2xl sm:text-3xl font-bold">Workouts</h1>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Log and track your training sessions</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
         <div>
-          <h2 className="font-semibold text-lg mb-4">Log Workout</h2>
+          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">Log Workout</h2>
           <Card>
             <WorkoutForm onSuccess={fetchEntries} />
           </Card>
         </div>
 
         <div>
-          <h2 className="font-semibold text-lg mb-4">
+          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">
             History
             {!loading && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
+              <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
                 ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
               </span>
             )}
           </h2>
 
           {loading ? (
-            <p className="text-sm text-gray-500">Loading...</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
           ) : (
             <WorkoutList entries={entries} onDelete={handleDelete} />
           )}

@@ -32,7 +32,6 @@ export default function CaloriesPage() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
-  // Today's totals
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -49,13 +48,13 @@ export default function CaloriesPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Calories</h1>
-        <p className="text-gray-500 mt-1 text-sm">Track your daily nutrition</p>
+      <div className="mb-8 sm:mb-10">
+        <h1 className="text-2xl sm:text-3xl font-bold">Calories</h1>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Track your daily nutrition</p>
       </div>
 
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 sm:mb-8">
           <StatCard title="Calories Today" value={totals.calories} unit="kcal" />
           <StatCard title="Protein Today" value={Math.round(totals.protein)} unit="g" />
           <StatCard title="Carbs Today" value={Math.round(totals.carbs)} unit="g" />
@@ -63,26 +62,26 @@ export default function CaloriesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
         <div>
-          <h2 className="font-semibold text-lg mb-4">Log Calories</h2>
+          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">Log Calories</h2>
           <Card>
             <CalorieForm onSuccess={fetchEntries} />
           </Card>
         </div>
 
         <div>
-          <h2 className="font-semibold text-lg mb-4">
+          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">
             Recent Entries
             {!loading && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
+              <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
                 ({entries.length} total)
               </span>
             )}
           </h2>
 
           {loading ? (
-            <p className="text-sm text-gray-500">Loading...</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
           ) : (
             <CalorieList entries={entries} onDelete={handleDelete} />
           )}

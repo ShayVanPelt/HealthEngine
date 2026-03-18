@@ -46,7 +46,9 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Calories</label>
+        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
+          Calories
+        </label>
         <input
           type="number"
           placeholder="2000"
@@ -54,14 +56,16 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
           value={form.calories}
           onChange={(e) => setForm({ ...form, calories: e.target.value })}
           required
-          className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+          className="form-input"
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(['protein', 'carbs', 'fat'] as const).map((macro) => (
           <div key={macro}>
-            <label className="block text-sm font-medium mb-1 capitalize">{macro} (g)</label>
+            <label className="block text-sm font-medium mb-1 capitalize text-zinc-700 dark:text-zinc-300">
+              {macro} (g)
+            </label>
             <input
               type="number"
               placeholder="0"
@@ -69,13 +73,13 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
               step="0.1"
               value={form[macro]}
               onChange={(e) => setForm({ ...form, [macro]: e.target.value })}
-              className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+              className="form-input"
             />
           </div>
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Calories'}

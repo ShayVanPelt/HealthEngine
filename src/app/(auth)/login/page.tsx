@@ -63,16 +63,22 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
       <div className="w-full max-w-sm">
-        <div className="border border-black p-8">
-          <h1 className="text-2xl font-bold mb-1">HealthEngine</h1>
-          <p className="text-sm text-gray-500 mb-8">Track your fitness journey</p>
+        <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8">
+          <div className="mb-7 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl font-bold">
+              Health<span className="text-violet-600 dark:text-violet-400">Engine</span>
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">Track your fitness journey</p>
+          </div>
 
           {step === 'email' ? (
             <form onSubmit={handleSendCode} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Email address</label>
+                <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
+                  Email address
+                </label>
                 <input
                   type="email"
                   value={email}
@@ -80,11 +86,11 @@ function LoginForm() {
                   placeholder="you@example.com"
                   required
                   autoFocus
-                  className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+                  className="form-input"
                 />
               </div>
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? 'Sending...' : 'Send verification code'}
@@ -92,17 +98,19 @@ function LoginForm() {
             </form>
           ) : (
             <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className="bg-gray-50 border border-gray-200 p-3 text-sm">
-                <p className="text-gray-700">
+              <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 p-3 text-sm">
+                <p className="text-zinc-700 dark:text-zinc-300">
                   A 6-digit code was sent to <strong>{email}</strong>.
                 </p>
-                <p className="text-gray-400 text-xs mt-1">
+                <p className="text-zinc-400 dark:text-zinc-500 text-xs mt-1">
                   In development, the code is logged to the server console.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Verification code</label>
+                <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
+                  Verification code
+                </label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -112,11 +120,11 @@ function LoginForm() {
                   required
                   autoFocus
                   maxLength={6}
-                  className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black tracking-[0.4em] text-center font-mono text-lg"
+                  className="form-input tracking-[0.4em] text-center font-mono text-lg"
                 />
               </div>
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
               <Button type="submit" disabled={loading || code.length !== 6} className="w-full">
                 {loading ? 'Verifying...' : 'Sign in'}
@@ -129,7 +137,7 @@ function LoginForm() {
                   setCode('');
                   setError('');
                 }}
-                className="w-full text-sm text-gray-500 hover:text-black transition-colors"
+                className="w-full text-sm text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
               >
                 Use a different email
               </button>
@@ -145,8 +153,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-sm text-gray-500">Loading...</p>
+        <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
         </div>
       }
     >

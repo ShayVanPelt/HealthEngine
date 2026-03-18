@@ -45,19 +45,23 @@ export default function WorkoutForm({ onSuccess }: WorkoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Workout Type</label>
+        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
+          Workout Type
+        </label>
         <input
           type="text"
           placeholder="e.g. Running, Weight Training, Yoga"
           value={form.workoutType}
           onChange={(e) => setForm({ ...form, workoutType: e.target.value })}
           required
-          className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+          className="form-input"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Duration (minutes)</label>
+        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
+          Duration (minutes)
+        </label>
         <input
           type="number"
           placeholder="30"
@@ -65,22 +69,24 @@ export default function WorkoutForm({ onSuccess }: WorkoutFormProps) {
           value={form.duration}
           onChange={(e) => setForm({ ...form, duration: e.target.value })}
           required
-          className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+          className="form-input"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Notes (optional)</label>
+        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
+          Notes (optional)
+        </label>
         <textarea
           placeholder="Any notes about this workout..."
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           rows={3}
-          className="w-full border border-black px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black resize-none"
+          className="form-input resize-none"
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Workout'}

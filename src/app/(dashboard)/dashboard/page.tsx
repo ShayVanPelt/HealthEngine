@@ -12,11 +12,9 @@ export default async function DashboardPage() {
 
   const now = new Date();
 
-  // Start of today
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
 
-  // Start of this week (Sunday)
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
@@ -39,13 +37,12 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-500 mt-1 text-sm">Welcome back, {session.email}</p>
+      <div className="mb-8 sm:mb-10">
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Welcome back, {session.email}</p>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard
           title="Today's Calories"
           value={caloriesToday}
@@ -73,10 +70,9 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Quick actions */}
-      <div className="border border-black p-6 max-w-xs">
-        <h2 className="font-semibold mb-3">Quick Actions</h2>
-        <div className="space-y-2">
+      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
+        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Quick Actions</p>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
           {[
             { href: '/workouts', label: 'Log a workout' },
             { href: '/calories', label: 'Log calories' },
@@ -85,9 +81,10 @@ export default async function DashboardPage() {
             <Link
               key={action.href}
               href={action.href}
-              className="block text-sm text-gray-600 hover:text-black transition-colors"
+              className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
             >
-              → {action.label}
+              <span className="text-violet-500 dark:text-violet-400">→</span>
+              {action.label}
             </Link>
           ))}
         </div>

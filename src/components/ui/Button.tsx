@@ -16,9 +16,12 @@ export default function Button({
     'font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-black text-white hover:bg-gray-800',
-    secondary: 'border border-black text-black hover:bg-gray-100',
-    danger: 'border border-red-600 text-red-600 hover:bg-red-50',
+    primary:
+      'bg-violet-600 text-white hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-400',
+    secondary:
+      'border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+    danger:
+      'border border-red-500 dark:border-red-400 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950',
   };
 
   const sizes = {

@@ -6,7 +6,7 @@ A full-stack fitness tracker built with Next.js 15 (App Router), TypeScript, Tai
 ## Stack
 - **Framework**: Next.js 15 App Router
 - **Language**: TypeScript (strict)
-- **Styling**: TailwindCSS — black/white minimalist theme
+- **Styling**: TailwindCSS — black/white/purple theme with dark mode (`darkMode: 'class'`)
 - **Database**: SQLite in dev (`prisma/dev.db`), swap to PostgreSQL for production
 - **ORM**: Prisma
 - **Sessions**: iron-session (encrypted cookie, 1-week expiry)
@@ -96,6 +96,26 @@ prisma/
 | WorkoutEntry | userId, workoutType, duration (min), notes? |
 | CalorieEntry | userId, calories, protein?, carbs?, fat? |
 | WeightEntry | userId, weight (kg), bodyFat? |
+
+## Color system
+- **Purple accent**: `violet-600` (light mode), `violet-400` (dark mode) — used for active nav, primary buttons, stat values, brand "Engine" text, link hovers
+- **Backgrounds**: `white` / `zinc-50` (light), `zinc-950` (dark page), `zinc-900` (dark cards)
+- **Borders**: `zinc-200` (light), `zinc-800` (dark)
+- **Text muted**: `zinc-500` (light), `zinc-400` (dark)
+- **Dark mode**: toggled via `class` strategy. Inline script in `layout.tsx` reads `localStorage.theme` before first paint to prevent flash. Toggle button in `TopNav`.
+- **Input fields**: use the `.form-input` CSS utility class (defined in `globals.css`) — gives zinc borders, dark bg, violet focus ring
+- **Stat cards**: violet gradient bar at top (`h-0.5`), violet value text
+- **Primary button**: `bg-violet-600 hover:bg-violet-700` (light) / `bg-violet-500 hover:bg-violet-400` (dark)
+
+## Component rules
+- **Mobile-first always**: Every component must work on both desktop and mobile. Use Tailwind responsive prefixes (`sm:`, `md:`) mobile-first — default styles target small screens, larger breakpoints override upward.
+- **No fixed-width grids on mobile**: Multi-column grids must stack on mobile. Use `grid-cols-1 sm:grid-cols-N`, never `grid-cols-N` alone for forms or content layouts.
+- **Responsive text**: Large display text must scale down. Use `text-2xl sm:text-3xl` patterns — never `text-3xl` or above without a smaller mobile base.
+- **Responsive padding**: Cards and containers use `p-4 sm:p-6`, not fixed `p-6` or `p-8` alone.
+- **Navigation**: The TopNav hides links on mobile and shows a hamburger menu. Do not add inline nav items that would overflow on small screens.
+- **Touch targets**: Interactive elements (buttons, links) must be at least 44px tall on mobile. Use `py-2` or `py-3` on touch controls.
+- **`max-w-*` containers**: Never use `max-w-xs` alone as a width constraint on content — wrap with `sm:max-w-xs` so it goes full-width on mobile.
+- **Dark mode on all new components**: Every new component must include `dark:` variants. Never use `border-black`, `text-black`, `bg-white`, or `text-gray-*` without a `dark:` counterpart.
 
 ## Switching to PostgreSQL (production)
 1. Change `prisma/schema.prisma` datasource provider to `"postgresql"`

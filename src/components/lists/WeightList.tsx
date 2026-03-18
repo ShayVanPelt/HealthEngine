@@ -10,22 +10,27 @@ interface WeightListProps {
 
 export default function WeightList({ entries, onDelete }: WeightListProps) {
   if (entries.length === 0) {
-    return <p className="text-sm text-gray-500 py-4">No weight entries yet.</p>;
+    return <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">No weight entries yet.</p>;
   }
 
   return (
     <div className="space-y-3">
       {entries.map((entry) => (
-        <div key={entry.id} className="border border-black p-4 flex items-start justify-between">
+        <div
+          key={entry.id}
+          className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-start justify-between"
+        >
           <div>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-2xl font-bold">{entry.weight}</span>
-              <span className="text-sm text-gray-500">kg</span>
+              <span className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                {entry.weight}
+              </span>
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">kg</span>
               {entry.bodyFat !== null && (
-                <span className="text-sm text-gray-500">{entry.bodyFat}% body fat</span>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">{entry.bodyFat}% body fat</span>
               )}
             </div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
               {new Date(entry.createdAt).toLocaleDateString('en-US', {
                 weekday: 'short',
                 month: 'short',
