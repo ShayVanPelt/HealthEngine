@@ -2,9 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
+@layer base {
+  :root {
+    /* Backgrounds */
+    --background: 0 0% 100%;
+    --foreground: 240 6% 10%;
+
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-foreground: 240 6% 10%;
+
+    /* Popovers */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 6% 10%;
+
+    /* Primary — violet-600 */
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary — zinc-100 */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+
+    /* Muted — zinc-100/zinc-500 */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    /* Accent — zinc-100 */
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+
+    /* Destructive — red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Borders & inputs — zinc-200 */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+
+    /* Ring — violet-500 */
+    --ring: 263 70% 50%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Backgrounds — zinc-950 */
+    --background: 240 10% 4%;
+    --foreground: 240 5% 96%;
+
+    /* Cards — zinc-900 */
+    --card: 240 6% 10%;
+    --card-foreground: 240 5% 96%;
+
+    /* Popovers */
+    --popover: 240 6% 10%;
+    --popover-foreground: 240 5% 96%;
+
+    /* Primary — violet-500 */
+    --primary: 258 90% 66%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary — zinc-800 */
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 240 5% 96%;
+
+    /* Muted — zinc-800/zinc-400 */
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    /* Accent — zinc-800 */
+    --accent: 240 4% 16%;
+    --accent-foreground: 240 5% 96%;
+
+    /* Destructive */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Borders & inputs — zinc-800 */
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+
+    /* Ring — violet-400 */
+    --ring: 256 95% 76%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom scrollbar */
@@ -16,15 +118,4 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-zinc-400 dark:bg-zinc-600;
-}
-
-@layer components {
-  .form-input {
-    @apply w-full border border-zinc-300 dark:border-zinc-700
-           bg-white dark:bg-zinc-900
-           px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100
-           placeholder:text-zinc-400 dark:placeholder:text-zinc-600
-           focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400
-           focus:border-transparent transition-colors;
-  }
 }

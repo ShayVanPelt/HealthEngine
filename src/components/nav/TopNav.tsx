@@ -3,6 +3,16 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -35,11 +45,21 @@ function MoonIcon() {
   );
 }
 
+function MenuIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
 export default function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -59,12 +79,12 @@ export default function TopNav() {
   };
 
   return (
-    <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+    <nav className="border-b border-border bg-background">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           {/* Brand */}
           <span className="font-bold text-lg tracking-tight select-none">
-            Health<span className="text-violet-600 dark:text-violet-400">Engine</span>
+            Health<span className="text-primary">Engine</span>
           </span>
 
           {/* Desktop nav */}
@@ -73,84 +93,93 @@ export default function TopNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={cn(
+                  'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                   pathname === item.href
-                    ? 'bg-violet-600 text-white dark:bg-violet-500'
-                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                }`}
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
               >
                 {item.label}
               </Link>
             ))}
 
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
-              className="ml-2 p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="ml-2 h-8 w-8"
               aria-label="Toggle theme"
             >
               {dark ? <SunIcon /> : <MoonIcon />}
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="ml-1 px-3 py-1.5 text-sm font-medium border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
+              className="ml-1"
             >
-              {loggingOut ? '...' : 'Sign out'}
-            </button>
+              {loggingOut ? 'Signing out…' : 'Sign out'}
+            </Button>
           </div>
 
           {/* Mobile right side */}
           <div className="flex sm:hidden items-center gap-1">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
-              className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              className="h-8 w-8"
               aria-label="Toggle theme"
             >
               {dark ? <SunIcon /> : <MoonIcon />}
-            </button>
+            </Button>
 
-            <button
-              className="p-2 -mr-2"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Toggle menu"
-            >
-              <div className="space-y-1.5">
-                <span className={`block w-6 h-0.5 bg-zinc-900 dark:bg-zinc-100 transition-transform duration-200 ${menuOpen ? 'translate-y-2 rotate-45' : ''}`} />
-                <span className={`block w-6 h-0.5 bg-zinc-900 dark:bg-zinc-100 transition-opacity duration-200 ${menuOpen ? 'opacity-0' : ''}`} />
-                <span className={`block w-6 h-0.5 bg-zinc-900 dark:bg-zinc-100 transition-transform duration-200 ${menuOpen ? '-translate-y-2 -rotate-45' : ''}`} />
-              </div>
-            </button>
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Toggle menu">
+                  <MenuIcon />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64 p-0">
+                <SheetHeader className="px-5 pt-5 pb-3">
+                  <SheetTitle className="text-left font-bold">
+                    Health<span className="text-primary">Engine</span>
+                  </SheetTitle>
+                </SheetHeader>
+                <Separator />
+                <nav className="flex flex-col py-2">
+                  {NAV_ITEMS.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        'px-5 py-3 text-sm font-medium transition-colors',
+                        pathname === item.href
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-foreground hover:bg-accent'
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <Separator className="my-2" />
+                  <button
+                    onClick={() => { setMobileOpen(false); handleLogout(); }}
+                    disabled={loggingOut}
+                    className="px-5 py-3 text-sm font-medium text-left text-muted-foreground hover:bg-accent transition-colors disabled:opacity-40"
+                  >
+                    {loggingOut ? 'Signing out…' : 'Sign out'}
+                  </button>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
-
-      {/* Mobile menu dropdown */}
-      {menuOpen && (
-        <div className="sm:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMenuOpen(false)}
-              className={`block px-4 py-3 text-sm font-medium border-b border-zinc-100 dark:border-zinc-800 transition-colors ${
-                pathname === item.href
-                  ? 'bg-violet-600 text-white dark:bg-violet-500'
-                  : 'text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900'
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <button
-            onClick={() => { setMenuOpen(false); handleLogout(); }}
-            disabled={loggingOut}
-            className="w-full text-left px-4 py-3 text-sm font-medium text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors disabled:opacity-40"
-          >
-            {loggingOut ? '...' : 'Sign out'}
-          </button>
-        </div>
-      )}
     </nav>
   );
 }

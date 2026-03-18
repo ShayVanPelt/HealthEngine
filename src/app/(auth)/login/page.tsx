@@ -2,7 +2,10 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 function LoginForm() {
   const router = useRouter();
@@ -63,87 +66,86 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8">
-          <div className="mb-7 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl font-bold">
-              Health<span className="text-violet-600 dark:text-violet-400">Engine</span>
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">Track your fitness journey</p>
-          </div>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl sm:text-2xl">
+              Health<span className="text-primary">Engine</span>
+            </CardTitle>
+            <CardDescription>Track your fitness journey</CardDescription>
+          </CardHeader>
 
-          {step === 'email' ? (
-            <form onSubmit={handleSendCode} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-                  Email address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  autoFocus
-                  className="form-input"
-                />
-              </div>
+          <CardContent>
+            {step === 'email' ? (
+              <form onSubmit={handleSendCode} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    autoFocus
+                  />
+                </div>
 
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+                {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? 'Sending...' : 'Send verification code'}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 p-3 text-sm">
-                <p className="text-zinc-700 dark:text-zinc-300">
-                  A 6-digit code was sent to <strong>{email}</strong>.
-                </p>
-                <p className="text-zinc-400 dark:text-zinc-500 text-xs mt-1">
-                  In development, the code is logged to the server console.
-                </p>
-              </div>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? 'Sending...' : 'Send verification code'}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-sm">
+                  <p className="text-foreground">
+                    A 6-digit code was sent to <strong>{email}</strong>.
+                  </p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    In development, the code is logged to the server console.
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-                  Verification code
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  required
-                  autoFocus
-                  maxLength={6}
-                  className="form-input tracking-[0.4em] text-center font-mono text-lg"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="code">Verification code</Label>
+                  <Input
+                    id="code"
+                    type="text"
+                    inputMode="numeric"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    required
+                    autoFocus
+                    maxLength={6}
+                    className="tracking-[0.4em] text-center font-mono text-lg"
+                  />
+                </div>
 
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+                {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" disabled={loading || code.length !== 6} className="w-full">
-                {loading ? 'Verifying...' : 'Sign in'}
-              </Button>
+                <Button type="submit" disabled={loading || code.length !== 6} className="w-full">
+                  {loading ? 'Verifying...' : 'Sign in'}
+                </Button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setStep('email');
-                  setCode('');
-                  setError('');
-                }}
-                className="w-full text-sm text-zinc-500 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-              >
-                Use a different email
-              </button>
-            </form>
-          )}
-        </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('email');
+                    setCode('');
+                    setError('');
+                  }}
+                  className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Use a different email
+                </button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -153,8 +155,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       }
     >

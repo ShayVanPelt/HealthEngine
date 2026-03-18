@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface CalorieFormProps {
   onSuccess: () => void;
@@ -45,41 +47,37 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-          Calories
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="calories">Calories</Label>
+        <Input
+          id="calories"
           type="number"
           placeholder="2000"
           min="0"
           value={form.calories}
           onChange={(e) => setForm({ ...form, calories: e.target.value })}
           required
-          className="form-input"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(['protein', 'carbs', 'fat'] as const).map((macro) => (
-          <div key={macro}>
-            <label className="block text-sm font-medium mb-1 capitalize text-zinc-700 dark:text-zinc-300">
-              {macro} (g)
-            </label>
-            <input
+          <div key={macro} className="space-y-1.5">
+            <Label htmlFor={macro} className="capitalize">{macro} (g)</Label>
+            <Input
+              id={macro}
               type="number"
               placeholder="0"
               min="0"
               step="0.1"
               value={form[macro]}
               onChange={(e) => setForm({ ...form, [macro]: e.target.value })}
-              className="form-input"
             />
           </div>
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Calories'}

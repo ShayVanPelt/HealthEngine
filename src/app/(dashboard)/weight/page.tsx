@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import WeightForm from '@/components/forms/WeightForm';
 import WeightList from '@/components/lists/WeightList';
-import Card from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/components/ui/StatCard';
 import type { WeightEntry } from '@/types';
 
 export default function WeightPage() {
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -28,7 +29,12 @@ export default function WeightPage() {
   }, [fetchEntries]);
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/weight/${id}`, { method: 'DELETE' });
+    setDeleteError('');
+    const res = await fetch(`/api/weight/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      setDeleteError('Failed to delete entry. Please try again.');
+      return;
+    }
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
@@ -41,7 +47,7 @@ export default function WeightPage() {
     <div>
       <div className="mb-8 sm:mb-10">
         <h1 className="text-2xl sm:text-3xl font-bold">Weight / Stats</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Monitor your body composition over time</p>
+        <p className="text-muted-foreground mt-2 text-sm">Monitor your body composition over time</p>
       </div>
 
       {!loading && (
@@ -75,24 +81,31 @@ export default function WeightPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
         <div>
-          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">Log Weight</h2>
           <Card>
-            <WeightForm onSuccess={fetchEntries} />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Log Weight</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WeightForm onSuccess={fetchEntries} />
+            </CardContent>
           </Card>
         </div>
 
         <div>
-          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">
+          <h2 className="font-semibold text-lg mb-3">
             History
             {!loading && (
-              <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
+              <span className="text-sm font-normal text-muted-foreground ml-2">
                 ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
               </span>
             )}
           </h2>
 
+          {deleteError && (
+            <p role="alert" className="text-sm text-destructive mb-3">{deleteError}</p>
+          )}
           {loading ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
+            <p className="text-sm text-muted-foreground">Loading...</p>
           ) : (
             <WeightList entries={entries} onDelete={handleDelete} />
           )}

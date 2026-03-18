@@ -8,12 +8,14 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
-  createdAt      DateTime       @default(now())
-  workoutEntries WorkoutEntry[]
-  calorieEntries CalorieEntry[]
-  weightEntries  WeightEntry[]
+  id               String            @id @default(cuid())
+  email            String            @unique
+  createdAt        DateTime          @default(now())
+  workoutEntries   WorkoutEntry[]
+  calorieEntries   CalorieEntry[]
+  weightEntries    WeightEntry[]
+  exercises        Exercise[]
+  workouts         Workout[]
 }
 
 model VerificationCode {
@@ -54,4 +56,41 @@ model WeightEntry {
   bodyFat   Float?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Exercise {
+  id               String            @id @default(cuid())
+  userId           String
+  name             String
+  createdAt        DateTime          @default(now())
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutExercises WorkoutExercise[]
+}
+
+model Workout {
+  id               String            @id @default(cuid())
+  userId           String
+  date             DateTime
+  createdAt        DateTime          @default(now())
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutExercises WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id         String       @id @default(cuid())
+  workoutId  String
+  exerciseId String
+  workout    Workout      @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise   Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  sets       WorkoutSet[]
+}
+
+model WorkoutSet {
+  id                String          @id @default(cuid())
+  workoutExerciseId String
+  weight            Float?
+  reps              Int?
+  effort            Int?
+  createdAt         DateTime        @default(now())
+  workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
 }

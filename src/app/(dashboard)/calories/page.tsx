@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import CalorieForm from '@/components/forms/CalorieForm';
 import CalorieList from '@/components/lists/CalorieList';
-import Card from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/components/ui/StatCard';
 import type { CalorieEntry } from '@/types';
 
 export default function CaloriesPage() {
   const [entries, setEntries] = useState<CalorieEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -28,7 +29,12 @@ export default function CaloriesPage() {
   }, [fetchEntries]);
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/calories/${id}`, { method: 'DELETE' });
+    setDeleteError('');
+    const res = await fetch(`/api/calories/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      setDeleteError('Failed to delete entry. Please try again.');
+      return;
+    }
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
@@ -50,7 +56,7 @@ export default function CaloriesPage() {
     <div>
       <div className="mb-8 sm:mb-10">
         <h1 className="text-2xl sm:text-3xl font-bold">Calories</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Track your daily nutrition</p>
+        <p className="text-muted-foreground mt-2 text-sm">Track your daily nutrition</p>
       </div>
 
       {!loading && (
@@ -64,24 +70,31 @@ export default function CaloriesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
         <div>
-          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">Log Calories</h2>
           <Card>
-            <CalorieForm onSuccess={fetchEntries} />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Log Calories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CalorieForm onSuccess={fetchEntries} />
+            </CardContent>
           </Card>
         </div>
 
         <div>
-          <h2 className="font-semibold text-lg mb-3 text-zinc-900 dark:text-zinc-100">
+          <h2 className="font-semibold text-lg mb-3">
             Recent Entries
             {!loading && (
-              <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
+              <span className="text-sm font-normal text-muted-foreground ml-2">
                 ({entries.length} total)
               </span>
             )}
           </h2>
 
+          {deleteError && (
+            <p role="alert" className="text-sm text-destructive mb-3">{deleteError}</p>
+          )}
           {loading ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
+            <p className="text-sm text-muted-foreground">Loading...</p>
           ) : (
             <CalorieList entries={entries} onDelete={handleDelete} />
           )}

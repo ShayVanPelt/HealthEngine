@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface WeightFormProps {
   onSuccess: () => void;
@@ -43,11 +45,10 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-          Weight (kg)
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="weight">Weight (kg)</Label>
+        <Input
+          id="weight"
           type="number"
           placeholder="80.5"
           min="0"
@@ -55,15 +56,13 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
           value={form.weight}
           onChange={(e) => setForm({ ...form, weight: e.target.value })}
           required
-          className="form-input"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-          Body Fat % (optional)
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="bodyFat">Body Fat % (optional)</Label>
+        <Input
+          id="bodyFat"
           type="number"
           placeholder="18.5"
           min="0"
@@ -71,11 +70,10 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
           step="0.1"
           value={form.bodyFat}
           onChange={(e) => setForm({ ...form, bodyFat: e.target.value })}
-          className="form-input"
         />
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Weight'}

@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface WorkoutFormProps {
   onSuccess: () => void;
@@ -44,49 +47,44 @@ export default function WorkoutForm({ onSuccess }: WorkoutFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-          Workout Type
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="workoutType">Workout Type</Label>
+        <Input
+          id="workoutType"
           type="text"
           placeholder="e.g. Running, Weight Training, Yoga"
           value={form.workoutType}
           onChange={(e) => setForm({ ...form, workoutType: e.target.value })}
           required
-          className="form-input"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-          Duration (minutes)
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="duration">Duration (minutes)</Label>
+        <Input
+          id="duration"
           type="number"
           placeholder="30"
           min="1"
           value={form.duration}
           onChange={(e) => setForm({ ...form, duration: e.target.value })}
           required
-          className="form-input"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1 text-zinc-700 dark:text-zinc-300">
-          Notes (optional)
-        </label>
-        <textarea
+      <div className="space-y-1.5">
+        <Label htmlFor="notes">Notes (optional)</Label>
+        <Textarea
+          id="notes"
           placeholder="Any notes about this workout..."
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           rows={3}
-          className="form-input resize-none"
+          className="resize-none"
         />
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Workout'}

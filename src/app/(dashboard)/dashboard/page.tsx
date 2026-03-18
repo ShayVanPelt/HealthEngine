@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import StatCard from '@/components/ui/StatCard';
+import { Separator } from '@/components/ui/separator';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-8 sm:mb-10">
         <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Welcome back, {session.email}</p>
+        <p className="text-muted-foreground mt-2 text-sm">Welcome back, {session.email}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -70,8 +71,10 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
-        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Quick Actions</p>
+      <Separator className="mb-6" />
+
+      <div>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Quick Actions</p>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           {[
             { href: '/workouts', label: 'Log a workout' },
@@ -81,9 +84,9 @@ export default async function DashboardPage() {
             <Link
               key={action.href}
               href={action.href}
-              className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              <span className="text-violet-500 dark:text-violet-400">→</span>
+              <span className="text-primary">→</span>
               {action.label}
             </Link>
           ))}

@@ -30,3 +30,45 @@ export interface WeightEntry {
   bodyFat: number | null;
   createdAt: string;
 }
+
+// — Upgraded workout system —
+
+export interface Exercise {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface WorkoutSet {
+  id: string;
+  workoutExerciseId: string;
+  weight: number | null;
+  reps: number | null;
+  effort: number | null;
+  createdAt: string;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  workoutId: string;
+  exerciseId: string;
+  exercise: Exercise;
+  sets: WorkoutSet[];
+}
+
+export interface Workout {
+  id: string;
+  userId: string;
+  date: string;
+  createdAt: string;
+  workoutExercises: WorkoutExercise[];
+}
+
+export interface ExerciseHistoryEntry {
+  id: string;
+  workoutId: string;
+  exerciseId: string;
+  workout: { id: string; date: string };
+  sets: WorkoutSet[];
+}
