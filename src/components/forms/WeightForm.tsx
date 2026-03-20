@@ -11,13 +11,28 @@ interface WeightFormProps {
 
 export default function WeightForm({ onSuccess }: WeightFormProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<{ weight?: string; api?: string }>({});
   const [form, setForm] = useState({ weight: '', bodyFat: '' });
+
+  const validate = () => {
+    const next: typeof errors = {};
+    if (!form.weight.trim()) {
+      next.weight = 'Weight is required.';
+    } else if (isNaN(parseFloat(form.weight)) || parseFloat(form.weight) <= 0) {
+      next.weight = 'Enter a valid weight greater than 0.';
+    }
+    return next;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      return;
+    }
+    setErrors({});
     setLoading(true);
-    setError('');
 
     try {
       const res = await fetch('/api/weight', {
@@ -37,14 +52,14 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
       setForm({ weight: '', bodyFat: '' });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setErrors({ api: err instanceof Error ? err.message : 'Something went wrong' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div className="space-y-1.5">
         <Label htmlFor="weight">Weight (kg)</Label>
         <Input
@@ -55,8 +70,14 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
           step="0.1"
           value={form.weight}
           onChange={(e) => setForm({ ...form, weight: e.target.value })}
-          required
+          aria-invalid={!!errors.weight}
+          aria-describedby={errors.weight ? 'weight-error' : undefined}
         />
+        {errors.weight && (
+          <p id="weight-error" className="text-sm font-medium text-destructive">
+            {errors.weight}
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -73,7 +94,11 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
         />
       </div>
 
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {errors.api && (
+        <p role="alert" className="text-sm font-medium text-destructive">
+          {errors.api}
+        </p>
+      )}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Weight'}

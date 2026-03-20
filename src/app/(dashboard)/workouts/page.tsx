@@ -125,7 +125,7 @@ export default function WorkoutsPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="mb-5">
+      <div className="mb-5 animate-fade-in-up">
         <h1 className="text-2xl sm:text-3xl font-bold">Workouts</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Track your training, set by set.
@@ -190,6 +190,10 @@ export default function WorkoutsPage() {
                 date={selectedDate}
                 workouts={dayWorkouts}
                 loading={dayLoading}
+                onRefresh={() => {
+                  fetchDayWorkouts(selectedDate);
+                  fetchWorkoutDates(calYear, calMonth);
+                }}
               />
             </div>
           </div>

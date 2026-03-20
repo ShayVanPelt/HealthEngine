@@ -11,19 +11,38 @@ interface CalorieFormProps {
 
 export default function CalorieForm({ onSuccess }: CalorieFormProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({ calories: '', protein: '', carbs: '', fat: '' });
+  const [errors, setErrors] = useState<{ mealName?: string; calories?: string; api?: string }>({});
+  const [form, setForm] = useState({ mealName: '', calories: '', protein: '', carbs: '', fat: '' });
+
+  const validate = () => {
+    const next: typeof errors = {};
+    if (!form.mealName.trim()) {
+      next.mealName = 'Meal name is required.';
+    }
+    if (!form.calories.trim()) {
+      next.calories = 'Calories is required.';
+    } else if (isNaN(parseInt(form.calories)) || parseInt(form.calories) < 0) {
+      next.calories = 'Enter a valid calorie amount.';
+    }
+    return next;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      return;
+    }
+    setErrors({});
     setLoading(true);
-    setError('');
 
     try {
       const res = await fetch('/api/calories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mealName: form.mealName.trim(),
           calories: parseInt(form.calories),
           protein: form.protein ? parseFloat(form.protein) : null,
           carbs: form.carbs ? parseFloat(form.carbs) : null,
@@ -36,17 +55,35 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
         throw new Error(data.error ?? 'Failed to log calories');
       }
 
-      setForm({ calories: '', protein: '', carbs: '', fat: '' });
+      setForm({ mealName: '', calories: '', protein: '', carbs: '', fat: '' });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setErrors({ api: err instanceof Error ? err.message : 'Something went wrong' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <div className="space-y-1.5">
+        <Label htmlFor="mealName">Meal Name</Label>
+        <Input
+          id="mealName"
+          type="text"
+          placeholder="e.g. Chicken & Rice, Protein Shake"
+          value={form.mealName}
+          onChange={(e) => setForm({ ...form, mealName: e.target.value })}
+          aria-invalid={!!errors.mealName}
+          aria-describedby={errors.mealName ? 'mealName-error' : undefined}
+        />
+        {errors.mealName && (
+          <p id="mealName-error" className="text-sm font-medium text-destructive">
+            {errors.mealName}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="calories">Calories</Label>
         <Input
@@ -56,8 +93,14 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
           min="0"
           value={form.calories}
           onChange={(e) => setForm({ ...form, calories: e.target.value })}
-          required
+          aria-invalid={!!errors.calories}
+          aria-describedby={errors.calories ? 'calories-error' : undefined}
         />
+        {errors.calories && (
+          <p id="calories-error" className="text-sm font-medium text-destructive">
+            {errors.calories}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -77,7 +120,11 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
         ))}
       </div>
 
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {errors.api && (
+        <p role="alert" className="text-sm font-medium text-destructive">
+          {errors.api}
+        </p>
+      )}
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Logging...' : 'Log Calories'}

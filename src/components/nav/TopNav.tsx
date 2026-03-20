@@ -81,20 +81,20 @@ export default function TopNav() {
   return (
     <nav className="border-b border-border bg-background">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-16">
           {/* Brand */}
-          <span className="font-bold text-lg tracking-tight select-none">
+          <span className="font-black text-xl tracking-tight select-none">
             Health<span className="text-primary">Engine</span>
           </span>
 
           {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-0.5">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  'px-3 py-2 text-sm font-semibold rounded-md transition-colors',
                   pathname === item.href
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'

@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/hooks/useToast';
 import type { Exercise } from '@/types';
 
 interface SetDraft {
@@ -43,15 +44,40 @@ function getTodayString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function parseDateString(s: string) {
+  const [y, m, d] = s.split('-').map(Number);
+  return { year: y, month: m, day: d };
+}
+
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
 function emptySet(): SetDraft {
   return { weight: '', reps: '', effort: '' };
 }
 
 export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWorkoutModalProps) {
+  const { toast } = useToast();
   const [date, setDate] = useState(getTodayString);
   const [drafts, setDrafts] = useState<ExerciseDraft[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const { year, month, day } = parseDateString(date);
+
+  const updateDate = (nextYear: number, nextMonth: number, nextDay: number) => {
+    const maxDay = daysInMonth(nextYear, nextMonth);
+    const clampedDay = Math.min(nextDay, maxDay);
+    setDate(
+      `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
+    );
+  };
 
   const addedIds = new Set(drafts.map((d) => d.exerciseId));
   const availableExercises = exercises.filter((e) => !addedIds.has(e.id));
@@ -99,6 +125,36 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
       return;
     }
 
+    // Validate ranges
+    for (const ex of drafts) {
+      const exercise = exercises.find((e) => e.id === ex.exerciseId);
+      for (let i = 0; i < ex.sets.length; i++) {
+        const s = ex.sets[i];
+        const setNum = i + 1;
+        if (s.weight !== '') {
+          const w = parseFloat(s.weight);
+          if (isNaN(w) || w < 0 || w > 500) {
+            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: weight must be 0–500 kg`);
+            return;
+          }
+        }
+        if (s.reps !== '') {
+          const r = parseInt(s.reps, 10);
+          if (isNaN(r) || r < 1 || r > 50) {
+            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: reps must be 1–50`);
+            return;
+          }
+        }
+        if (s.effort !== '') {
+          const e = parseInt(s.effort, 10);
+          if (isNaN(e) || e < 1 || e > 10) {
+            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: RPE must be 1–10`);
+            return;
+          }
+        }
+      }
+    }
+
     setLoading(true);
     setError('');
 
@@ -126,6 +182,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
         throw new Error(data.error ?? 'Failed to save workout');
       }
 
+      toast('Workout saved!', 'success');
       onSuccess(date);
       onClose();
     } catch (err) {
@@ -149,13 +206,50 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
           {/* Date picker */}
           <div className="space-y-1.5">
-            <Label htmlFor="workoutDate">Date</Label>
-            <Input
-              id="workoutDate"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <Label>Date</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {/* Day */}
+              <Select value={String(day)} onValueChange={(v) => updateDate(year, month, Number(v))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Day" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: daysInMonth(year, month) }, (_, i) => i + 1).map((d) => (
+                    <SelectItem key={d} value={String(d)}>
+                      {String(d).padStart(2, '0')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Month */}
+              <Select value={String(month)} onValueChange={(v) => updateDate(year, Number(v), day)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((name, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Year */}
+              <Select value={String(year)} onValueChange={(v) => updateDate(Number(v), month, day)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Exercise entries */}
@@ -164,18 +258,20 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
             return (
               <div
                 key={exIdx}
-                className="border border-border rounded-lg overflow-hidden"
+                className="border border-border rounded-lg overflow-hidden animate-scale-in"
               >
                 {/* Exercise header row */}
                 <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-muted">
                   <span className="font-medium text-sm truncate min-w-0">{exercise?.name}</span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => removeExercise(exIdx)}
                     aria-label={`Remove ${exercise?.name ?? 'exercise'}`}
-                    className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                    className="text-xs text-muted-foreground hover:text-destructive h-auto py-0.5 px-2"
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Column headers */}
@@ -192,7 +288,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                   {ex.sets.map((set, setIdx) => (
                     <div
                       key={setIdx}
-                      className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.25rem] gap-1.5 items-center"
+                      className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.25rem] gap-1.5 items-center animate-fade-in-up"
                     >
                       <span className="text-xs text-muted-foreground text-center">{setIdx + 1}</span>
                       <Input
@@ -201,6 +297,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                         value={set.weight}
                         onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
                         min="0"
+                        max="500"
                         step="0.5"
                         aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} weight in kg`}
                         className="text-center text-sm h-8 px-1"
@@ -210,7 +307,8 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                         placeholder="—"
                         value={set.reps}
                         onChange={(e) => updateSet(exIdx, setIdx, 'reps', e.target.value)}
-                        min="0"
+                        min="1"
+                        max="50"
                         aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} reps`}
                         className="text-center text-sm h-8 px-1"
                       />
@@ -224,23 +322,27 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                         aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} RPE`}
                         className="text-center text-sm h-8 px-1"
                       />
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => removeSet(exIdx, setIdx)}
                         aria-label={`Remove set ${setIdx + 1}`}
-                        className="text-muted-foreground hover:text-destructive transition-colors text-base leading-none"
+                        className="h-8 w-5 text-muted-foreground hover:text-destructive"
                       >
                         <span aria-hidden="true">×</span>
-                      </button>
+                      </Button>
                     </div>
                   ))}
 
                   {/* Add set button */}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => addSet(exIdx)}
-                    className="mt-1 w-full py-2 text-xs font-medium text-primary border border-dashed border-primary/40 rounded-md hover:bg-primary/5 transition-colors"
+                    className="mt-1 w-full text-xs font-medium text-primary hover:text-primary hover:bg-primary/10"
                   >
                     + Add Set
-                  </button>
+                  </Button>
                 </div>
               </div>
             );

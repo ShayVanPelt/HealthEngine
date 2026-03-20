@@ -1,12 +1,15 @@
 'use client';
 
-import type { Workout } from '@/types';
+import { useState } from 'react';
+import type { Workout, WorkoutExercise } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import EditWorkoutExerciseModal from './EditWorkoutExerciseModal';
 
 interface WorkoutDayViewProps {
   date: string;
   workouts: Workout[];
   loading: boolean;
+  onRefresh: () => void;
 }
 
 function formatDisplayDate(dateStr: string) {
@@ -20,7 +23,25 @@ function formatDisplayDate(dateStr: string) {
   });
 }
 
-export default function WorkoutDayView({ date, workouts, loading }: WorkoutDayViewProps) {
+function calcVolume(sets: WorkoutExercise['sets']): number {
+  return sets.reduce((acc, s) => {
+    if (s.weight != null && s.reps != null) acc += s.weight * s.reps;
+    return acc;
+  }, 0);
+}
+
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
+export default function WorkoutDayView({ date, workouts, loading, onRefresh }: WorkoutDayViewProps) {
+  const [editing, setEditing] = useState<{ workoutId: string; workoutExercise: WorkoutExercise } | null>(null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -45,8 +66,8 @@ export default function WorkoutDayView({ date, workouts, loading }: WorkoutDayVi
         <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-2xl">
           🏋️
         </div>
-        <p className="text-sm text-muted-foreground">No workouts on this day</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">
+        <p className="text-sm font-semibold text-foreground">No workouts on this day</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
           Click &ldquo;+ Add Workout&rdquo; to log one
         </p>
       </div>
@@ -58,60 +79,112 @@ export default function WorkoutDayView({ date, workouts, loading }: WorkoutDayVi
     0
   );
   const totalExercises = workouts.reduce((acc, w) => acc + w.workoutExercises.length, 0);
+  const totalVolume = workouts.reduce(
+    (acc, w) =>
+      acc + w.workoutExercises.reduce((a, we) => a + calcVolume(we.sets), 0),
+    0
+  );
+
+  const exercises = workouts.flatMap((w) =>
+    w.workoutExercises.map((we) => ({ we, workoutId: w.id }))
+  );
 
   return (
-    <div className="space-y-5">
-      {/* Day header */}
-      <div className="flex items-baseline justify-between">
-        <p className="text-sm font-medium">
-          {formatDisplayDate(date)}
-        </p>
-        <span className="text-xs text-muted-foreground">
-          {totalExercises} {totalExercises === 1 ? 'exercise' : 'exercises'} · {totalSets}{' '}
-          {totalSets === 1 ? 'set' : 'sets'}
-        </span>
+    <>
+      {/* key={date} remounts this div when date changes, replaying the animations */}
+      <div key={date} className="space-y-5 animate-fade-in">
+        {/* Day header */}
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-sm font-semibold text-muted-foreground">
+            {formatDisplayDate(date)}
+          </p>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {totalExercises} {totalExercises === 1 ? 'exercise' : 'exercises'}
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-[10px] font-bold uppercase tracking-wider text-primary">
+              {totalSets} {totalSets === 1 ? 'set' : 'sets'}
+            </span>
+            {totalVolume > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {totalVolume.toLocaleString()} kg vol
+              </span>
+            )}
+          </div>
+        </div>
+
+        {exercises.map(({ we, workoutId }, cardIdx) => {
+          const volume = calcVolume(we.sets);
+          return (
+            <Card
+              key={we.id}
+              className="overflow-hidden animate-scale-in"
+              style={{ animationDelay: `${cardIdx * 60}ms` }}
+            >
+              <CardHeader className="px-4 py-3 bg-primary/8 flex-row items-center justify-between space-y-0 gap-2 border-b border-border">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base truncate">{we.exercise.name}</h3>
+                  {volume > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {volume.toLocaleString()} kg total volume
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    {we.sets.length} {we.sets.length === 1 ? 'set' : 'sets'}
+                  </span>
+                  <button
+                    onClick={() => setEditing({ workoutId, workoutExercise: we })}
+                    className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    aria-label={`Edit ${we.exercise.name}`}
+                  >
+                    <PencilIcon />
+                  </button>
+                </div>
+              </CardHeader>
+
+              <CardContent className="px-4 py-3">
+                <div className="grid grid-cols-[2rem_1fr_1fr_1fr] gap-2 mb-2">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Set</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">Weight</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">Reps</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">RPE</span>
+                </div>
+                <div className="space-y-0">
+                  {we.sets.map((set, i) => (
+                    <div
+                      key={set.id}
+                      className="grid grid-cols-[2rem_1fr_1fr_1fr] gap-2 py-2 border-t border-border/50"
+                    >
+                      <span className="text-sm font-bold text-muted-foreground">{i + 1}</span>
+                      <span className="text-sm font-semibold text-right tabular-nums">
+                        {set.weight != null ? `${set.weight}kg` : '—'}
+                      </span>
+                      <span className="text-sm font-semibold text-right tabular-nums">
+                        {set.reps != null ? set.reps : '—'}
+                      </span>
+                      <span className="text-sm font-semibold text-right tabular-nums">
+                        {set.effort != null ? set.effort : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {workouts.map((workout) =>
-        workout.workoutExercises.map((we) => (
-          <Card key={we.id} className="overflow-hidden">
-            <CardHeader className="px-4 py-3 bg-muted/50 flex-row items-center justify-between space-y-0 gap-2">
-              <h3 className="font-medium text-sm truncate min-w-0">{we.exercise.name}</h3>
-              <span className="text-xs text-muted-foreground">
-                {we.sets.length} {we.sets.length === 1 ? 'set' : 'sets'}
-              </span>
-            </CardHeader>
-
-            <CardContent className="px-4 py-3">
-              <div className="grid grid-cols-[2rem_1fr_1fr_1fr] gap-2 mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Set</span>
-                <span className="text-xs font-medium text-muted-foreground text-right">Weight</span>
-                <span className="text-xs font-medium text-muted-foreground text-right">Reps</span>
-                <span className="text-xs font-medium text-muted-foreground text-right">RPE</span>
-              </div>
-              <div className="space-y-0">
-                {we.sets.map((set, i) => (
-                  <div
-                    key={set.id}
-                    className="grid grid-cols-[2rem_1fr_1fr_1fr] gap-2 py-2 border-t border-border/50"
-                  >
-                    <span className="text-sm text-muted-foreground">{i + 1}</span>
-                    <span className="text-sm text-right tabular-nums">
-                      {set.weight != null ? `${set.weight}kg` : '—'}
-                    </span>
-                    <span className="text-sm text-right tabular-nums">
-                      {set.reps != null ? set.reps : '—'}
-                    </span>
-                    <span className="text-sm text-right tabular-nums">
-                      {set.effort != null ? set.effort : '—'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))
+      {editing && (
+        <EditWorkoutExerciseModal
+          workoutId={editing.workoutId}
+          workoutExercise={editing.workoutExercise}
+          onClose={() => setEditing(null)}
+          onSaved={onRefresh}
+          onWorkoutDeleted={onRefresh}
+        />
       )}
-    </div>
+    </>
   );
 }

@@ -4,18 +4,10 @@ export interface ApiResponse<T = void> {
   error?: string;
 }
 
-export interface WorkoutEntry {
-  id: string;
-  userId: string;
-  workoutType: string;
-  duration: number;
-  notes: string | null;
-  createdAt: string;
-}
-
 export interface CalorieEntry {
   id: string;
   userId: string;
+  mealName: string | null;
   calories: number;
   protein: number | null;
   carbs: number | null;
@@ -71,4 +63,25 @@ export interface ExerciseHistoryEntry {
   exerciseId: string;
   workout: { id: string; date: string };
   sets: WorkoutSet[];
+}
+
+// — Goals —
+
+export interface UserGoal {
+  id: string;
+  userId: string;
+  dailyCalories: number | null;
+  weeklyWorkouts: number | null;
+  targetWeight: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// — Dashboard trend/insight types —
+
+export interface StatTrend {
+  delta: number;
+  label: string;
+  /** true = higher is better (calories on track), false = lower is better (weight) */
+  positiveDirection: 'up' | 'down' | 'neutral';
 }

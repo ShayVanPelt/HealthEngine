@@ -1,5 +1,8 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 interface CalendarViewProps {
   year: number;
   month: number; // 0-indexed (0 = January)
@@ -59,65 +62,73 @@ export default function CalendarView({
   return (
     <div className="select-none">
       {/* Month navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <button
+      <div className="flex items-center justify-between mb-5">
+        <Button
           onClick={prevMonth}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-lg"
           aria-label="Previous month"
         >
           ‹
-        </button>
-        <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">
-          {MONTH_NAMES[month]} {year}
+        </Button>
+        <span className="font-black text-base text-foreground tracking-tight">
+          {MONTH_NAMES[month]} <span className="text-muted-foreground font-medium text-sm">{year}</span>
         </span>
-        <button
+        <Button
           onClick={nextMonth}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-lg"
           aria-label="Next month"
         >
           ›
-        </button>
+        </Button>
       </div>
 
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7 mb-1">
-        {DAY_NAMES.map((d) => (
-          <div key={d} className="py-1 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {d}
-          </div>
-        ))}
-      </div>
+      {/* Weekday headers + Day cells — key triggers fade on month change */}
+      <div key={`${year}-${month}`} className="animate-fade-in">
+        <div className="grid grid-cols-7 mb-1">
+          {DAY_NAMES.map((d) => (
+            <div key={d} className="py-1 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              {d}
+            </div>
+          ))}
+        </div>
 
-      {/* Day cells */}
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {cells.map((day, i) => {
-          if (!day) return <div key={i} />;
+        <div className="grid grid-cols-7 gap-y-1">
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} />;
 
-          const dateStr = toDateString(year, month, day);
-          const isSelected = dateStr === selectedDate;
-          const isToday = dateStr === todayStr;
-          const hasWorkout = workoutDateSet.has(dateStr);
+            const dateStr = toDateString(year, month, day);
+            const isSelected = dateStr === selectedDate;
+            const isToday = dateStr === todayStr;
+            const hasWorkout = workoutDateSet.has(dateStr);
 
-          return (
-            <button
-              key={i}
-              onClick={() => onDayClick(dateStr)}
-              className={[
-                'relative h-9 w-full flex items-center justify-center text-sm rounded-lg transition-all duration-100',
-                isSelected
-                  ? 'bg-violet-600 dark:bg-violet-500 text-white font-semibold shadow-sm'
-                  : isToday
-                  ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-              ].join(' ')}
-            >
-              {day}
-              {hasWorkout && !isSelected && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-violet-500 dark:bg-violet-400" />
-              )}
-            </button>
-          );
-        })}
+            return (
+              <Button
+                key={i}
+                onClick={() => onDayClick(dateStr)}
+                variant="ghost"
+                className={cn(
+                  'relative h-9 w-full rounded-md text-sm transition-all duration-150',
+                  isSelected
+                    ? 'bg-primary text-primary-foreground font-black shadow-sm hover:bg-primary hover:text-primary-foreground'
+                    : hasWorkout
+                    ? 'bg-primary/10 text-foreground font-semibold hover:bg-primary/20'
+                    : isToday
+                    ? 'ring-1 ring-primary text-foreground font-semibold'
+                    : 'text-foreground',
+                )}
+              >
+                {day}
+                {hasWorkout && !isSelected && (
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                )}
+              </Button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
