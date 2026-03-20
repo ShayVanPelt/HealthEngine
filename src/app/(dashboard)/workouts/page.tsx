@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,9 +15,10 @@ import {
 import CalendarView from '@/components/workouts/CalendarView';
 import WorkoutDayView from '@/components/workouts/WorkoutDayView';
 import ExerciseHistoryView from '@/components/workouts/ExerciseHistoryView';
-import AddExerciseModal from '@/components/workouts/AddExerciseModal';
-import AddWorkoutModal from '@/components/workouts/AddWorkoutModal';
 import type { Exercise, Workout, ExerciseHistoryEntry } from '@/types';
+
+const AddExerciseModal = dynamic(() => import('@/components/workouts/AddExerciseModal'), { ssr: false });
+const AddWorkoutModal = dynamic(() => import('@/components/workouts/AddWorkoutModal'), { ssr: false });
 
 function getTodayString() {
   const d = new Date();
@@ -110,11 +112,10 @@ export default function WorkoutsPage() {
     setCalMonth(month);
   };
 
-  const handleWorkoutAdded = (date: string) => {
-    fetchWorkoutDates(calYear, calMonth);
+  const handleWorkoutAdded = useCallback((date: string) => {
     setSelectedDate(date);
-    fetchDayWorkouts(date);
-  };
+    Promise.all([fetchWorkoutDates(calYear, calMonth), fetchDayWorkouts(date)]);
+  }, [calYear, calMonth, fetchWorkoutDates, fetchDayWorkouts]);
 
   const handleExerciseCreated = (exercise: Exercise) => {
     setExercises((prev) =>

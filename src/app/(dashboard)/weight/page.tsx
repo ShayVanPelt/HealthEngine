@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import WeightForm from '@/components/forms/WeightForm';
 import WeightList from '@/components/lists/WeightList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,7 @@ export default function WeightPage() {
     fetchEntries();
   }, [fetchEntries]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     setDeleteError('');
     const res = await fetch(`/api/weight/${id}`, { method: 'DELETE' });
     if (!res.ok) {
@@ -36,12 +36,14 @@ export default function WeightPage() {
       return;
     }
     setEntries((prev) => prev.filter((e) => e.id !== id));
-  };
+  }, []);
 
-  const latest = entries[0];
-  const previous = entries[1];
-  const trend =
-    latest && previous ? (latest.weight - previous.weight).toFixed(1) : null;
+  const { latest, trend } = useMemo(() => {
+    const latest = entries[0];
+    const previous = entries[1];
+    const trend = latest && previous ? (latest.weight - previous.weight).toFixed(1) : null;
+    return { latest, trend };
+  }, [entries]);
 
   return (
     <div>

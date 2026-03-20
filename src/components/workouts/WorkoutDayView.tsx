@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Workout, WorkoutExercise } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import EditWorkoutExerciseModal from './EditWorkoutExerciseModal';
@@ -42,6 +42,22 @@ function PencilIcon() {
 export default function WorkoutDayView({ date, workouts, loading, onRefresh }: WorkoutDayViewProps) {
   const [editing, setEditing] = useState<{ workoutId: string; workoutExercise: WorkoutExercise } | null>(null);
 
+  const { totalSets, totalExercises, totalVolume, exercises } = useMemo(() => {
+    let sets = 0;
+    let exCount = 0;
+    let volume = 0;
+    const flat: { we: WorkoutExercise; workoutId: string }[] = [];
+    for (const w of workouts) {
+      exCount += w.workoutExercises.length;
+      for (const we of w.workoutExercises) {
+        sets += we.sets.length;
+        volume += calcVolume(we.sets);
+        flat.push({ we, workoutId: w.id });
+      }
+    }
+    return { totalSets: sets, totalExercises: exCount, totalVolume: volume, exercises: flat };
+  }, [workouts]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -73,21 +89,6 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
       </div>
     );
   }
-
-  const totalSets = workouts.reduce(
-    (acc, w) => acc + w.workoutExercises.reduce((a, we) => a + we.sets.length, 0),
-    0
-  );
-  const totalExercises = workouts.reduce((acc, w) => acc + w.workoutExercises.length, 0);
-  const totalVolume = workouts.reduce(
-    (acc, w) =>
-      acc + w.workoutExercises.reduce((a, we) => a + calcVolume(we.sets), 0),
-    0
-  );
-
-  const exercises = workouts.flatMap((w) =>
-    w.workoutExercises.map((we) => ({ we, workoutId: w.id }))
-  );
 
   return (
     <>

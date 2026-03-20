@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import CalorieForm from '@/components/forms/CalorieForm';
 import CalorieList from '@/components/lists/CalorieList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,7 +74,7 @@ export default function CaloriesPage() {
     toast('Calories logged!', 'success');
   }, [fetchEntries, fetchCalorieDates, selectedDate, calYear, calMonth, toast]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     const res = await fetch(`/api/calories/${id}`, { method: 'DELETE' });
     if (!res.ok) {
       toast('Failed to delete entry', 'error');
@@ -83,9 +83,9 @@ export default function CaloriesPage() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
     fetchCalorieDates(calYear, calMonth);
     toast('Entry deleted', 'info');
-  };
+  }, [calYear, calMonth, fetchCalorieDates, toast]);
 
-  const totals = entries.reduce(
+  const totals = useMemo(() => entries.reduce(
     (acc, e) => ({
       calories: acc.calories + e.calories,
       protein: acc.protein + (e.protein ?? 0),
@@ -93,7 +93,7 @@ export default function CaloriesPage() {
       fat: acc.fat + (e.fat ?? 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  );
+  ), [entries]);
 
   const todayStr = getTodayString();
   const isToday = selectedDate === todayStr;

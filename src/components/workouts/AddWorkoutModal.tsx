@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -79,8 +79,20 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
     );
   };
 
-  const addedIds = new Set(drafts.map((d) => d.exerciseId));
-  const availableExercises = exercises.filter((e) => !addedIds.has(e.id));
+  const availableExercises = useMemo(() => {
+    const addedIds = new Set(drafts.map((d) => d.exerciseId));
+    return exercises.filter((e) => !addedIds.has(e.id));
+  }, [drafts, exercises]);
+
+  const dayOptions = useMemo(
+    () => Array.from({ length: daysInMonth(year, month) }, (_, i) => i + 1),
+    [year, month]
+  );
+
+  const yearOptions = useMemo(
+    () => Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i),
+    []
+  );
 
   const addExercise = (exerciseId: string) => {
     if (!exerciseId) return;
@@ -214,7 +226,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                   <SelectValue placeholder="Day" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: daysInMonth(year, month) }, (_, i) => i + 1).map((d) => (
+                  {dayOptions.map((d) => (
                     <SelectItem key={d} value={String(d)}>
                       {String(d).padStart(2, '0')}
                     </SelectItem>
@@ -242,7 +254,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
+                  {yearOptions.map((y) => (
                     <SelectItem key={y} value={String(y)}>
                       {y}
                     </SelectItem>
