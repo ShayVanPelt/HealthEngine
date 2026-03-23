@@ -22,7 +22,7 @@ import {
 import { useToast } from '@/hooks/useToast';
 import type { Exercise } from '@/types';
 import { usePreferences } from '@/contexts/PreferencesContext';
-import { weightInputToKg, weightMaxForUnit, weightRangeLabel, convertEffortForStorage, convertEffortForDisplay, effortMin, effortMax, effortRangeLabel } from '@/lib/units';
+import { weightInputToKg, weightMaxForUnit, weightRangeLabel, convertEffortForStorage, effortMin, effortMax, effortRangeLabel } from '@/lib/units';
 
 interface SetDraft {
   weight: string;

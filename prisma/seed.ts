@@ -13,15 +13,7 @@ async function main() {
 
   console.log(`User: ${user.email} (${user.id})`);
 
-  // Seed workouts
-  await prisma.workoutEntry.createMany({
-    data: [
-      { userId: user.id, workoutType: 'Running', duration: 30, notes: 'Morning run in the park' },
-      { userId: user.id, workoutType: 'Weight Training', duration: 45, notes: 'Upper body day' },
-      { userId: user.id, workoutType: 'Cycling', duration: 60, notes: 'Indoor cycling session' },
-      { userId: user.id, workoutType: 'Yoga', duration: 40, notes: 'Evening stretch' },
-    ],
-  });
+  // Seed workouts skipped — requires Exercise rows first
 
   // Seed calorie entries
   await prisma.calorieEntry.createMany({
