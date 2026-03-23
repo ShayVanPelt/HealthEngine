@@ -4,12 +4,17 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { weightInputToKg, weightMaxForUnit } from '@/lib/units';
 
 interface WeightFormProps {
   onSuccess: () => void;
 }
 
 export default function WeightForm({ onSuccess }: WeightFormProps) {
+  const { preferences } = usePreferences();
+  const unit = preferences.units.bodyWeight;
+  const maxVal = weightMaxForUnit(unit);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ weight?: string; api?: string }>({});
   const [form, setForm] = useState({ weight: '', bodyFat: '' });
@@ -39,7 +44,7 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          weight: parseFloat(form.weight),
+          weight: weightInputToKg(parseFloat(form.weight), unit),
           bodyFat: form.bodyFat ? parseFloat(form.bodyFat) : null,
         }),
       });
@@ -61,13 +66,14 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="weight">Weight (kg)</Label>
+        <Label htmlFor="weight">Weight ({unit})</Label>
         <Input
           id="weight"
           type="number"
-          placeholder="80.5"
+          placeholder={unit === 'lbs' ? '177' : '80.5'}
           min="0"
-          step="0.1"
+          max={String(maxVal)}
+          step={unit === 'lbs' ? '0.5' : '0.1'}
           value={form.weight}
           onChange={(e) => setForm({ ...form, weight: e.target.value })}
           aria-invalid={!!errors.weight}

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/useToast';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { convertWeight, weightInputToKg } from '@/lib/units';
 
 interface GoalData {
   id: string;
@@ -19,13 +21,21 @@ interface GoalSetupCardProps {
 
 export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps) {
   const { toast } = useToast();
+  const { preferences } = usePreferences();
+  const wtUnit = preferences.units.bodyWeight;
+  const calLabel = 'Cal';
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [goal, setGoal] = useState<GoalData | null>(initialGoal);
 
   const [dailyCalories, setDailyCalories] = useState(String(initialGoal?.dailyCalories ?? ''));
   const [weeklyWorkouts, setWeeklyWorkouts] = useState(String(initialGoal?.weeklyWorkouts ?? ''));
-  const [targetWeight, setTargetWeight] = useState(String(initialGoal?.targetWeight ?? ''));
+  const [targetWeight, setTargetWeight] = useState(
+    initialGoal?.targetWeight != null
+      ? String(convertWeight(initialGoal.targetWeight, wtUnit))
+      : ''
+  );
 
   const hasGoals = goal?.dailyCalories || goal?.weeklyWorkouts || goal?.targetWeight;
 
@@ -38,7 +48,7 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
         body: JSON.stringify({
           dailyCalories: dailyCalories !== '' ? Number(dailyCalories) : null,
           weeklyWorkouts: weeklyWorkouts !== '' ? Number(weeklyWorkouts) : null,
-          targetWeight: targetWeight !== '' ? Number(targetWeight) : null,
+          targetWeight: targetWeight !== '' ? weightInputToKg(Number(targetWeight), wtUnit) : null,
         }),
       });
       if (!res.ok) throw new Error('Failed to save');
@@ -54,10 +64,11 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
   };
 
   const handleCancel = () => {
-    // Reset draft fields back to saved values
     setDailyCalories(String(goal?.dailyCalories ?? ''));
     setWeeklyWorkouts(String(goal?.weeklyWorkouts ?? ''));
-    setTargetWeight(String(goal?.targetWeight ?? ''));
+    setTargetWeight(
+      goal?.targetWeight != null ? String(convertWeight(goal.targetWeight, wtUnit)) : ''
+    );
     setEditing(false);
   };
 
@@ -85,7 +96,7 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Daily calories (kcal)</Label>
+              <Label className="text-xs text-muted-foreground">Daily calories ({calLabel})</Label>
               <Input
                 type="number"
                 placeholder="e.g. 2200"
@@ -108,14 +119,14 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Target weight (kg)</Label>
+              <Label className="text-xs text-muted-foreground">Target weight ({wtUnit})</Label>
               <Input
                 type="number"
-                placeholder="e.g. 75"
+                placeholder={wtUnit === 'lbs' ? 'e.g. 165' : 'e.g. 75'}
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(e.target.value)}
                 min="0"
-                step="0.1"
+                step={wtUnit === 'lbs' ? '0.5' : '0.1'}
                 className="h-8 text-sm"
               />
             </div>
@@ -133,13 +144,16 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
         /* ── Goal chips ── */
         <div className="flex flex-wrap gap-3">
           {goal?.dailyCalories && (
-            <GoalChip label="Daily calories" value={`${goal.dailyCalories.toLocaleString()} kcal`} />
+            <GoalChip label="Daily calories" value={`${goal.dailyCalories.toLocaleString()} ${calLabel}`} />
           )}
           {goal?.weeklyWorkouts && (
             <GoalChip label="Weekly workouts" value={`${goal.weeklyWorkouts}×`} />
           )}
           {goal?.targetWeight && (
-            <GoalChip label="Target weight" value={`${goal.targetWeight} kg`} />
+            <GoalChip
+              label="Target weight"
+              value={`${convertWeight(goal.targetWeight, wtUnit)} ${wtUnit}`}
+            />
           )}
         </div>
       ) : (

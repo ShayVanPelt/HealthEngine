@@ -2,6 +2,8 @@
 
 import type { ExerciseHistoryEntry } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { formatWeight, convertWeight, convertEffortForDisplay } from '@/lib/units';
 
 interface ExerciseHistoryViewProps {
   history: ExerciseHistoryEntry[];
@@ -34,6 +36,10 @@ function getTotalVolume(entry: ExerciseHistoryEntry): number {
 }
 
 export default function ExerciseHistoryView({ history, loading }: ExerciseHistoryViewProps) {
+  const { preferences } = usePreferences();
+  const unit = preferences.units.liftingWeight;
+  const effortUnit = preferences.units.effort;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -76,7 +82,7 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
           if (!maxW) return null;
           return (
             <span>
-              Best: <span className="font-semibold text-primary">{maxW}kg</span>
+              Best: <span className="font-semibold text-primary">{formatWeight(maxW, unit)}{unit}</span>
             </span>
           );
         })()}
@@ -102,7 +108,7 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
               <div className="flex items-center gap-2">
                 {volume > 0 && (
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {volume.toLocaleString()}kg vol
+                    {Math.round(convertWeight(volume, unit)).toLocaleString()}{unit} vol
                   </span>
                 )}
                 {delta !== null && delta !== 0 && (
@@ -114,7 +120,7 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
                         : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100'
                     }
                   >
-                    {delta > 0 ? '+' : ''}{delta}kg
+                    {delta > 0 ? '+' : ''}{formatWeight(Math.abs(delta), unit)}{unit}
                   </Badge>
                 )}
                 {idx === 0 && prevMaxWeight === null && maxWeight !== null && (
@@ -129,7 +135,7 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
                 <span className="text-xs font-medium text-muted-foreground">Set</span>
                 <span className="text-xs font-medium text-muted-foreground text-right">Weight</span>
                 <span className="text-xs font-medium text-muted-foreground text-right">Reps</span>
-                <span className="text-xs font-medium text-muted-foreground text-right">RPE</span>
+                <span className="text-xs font-medium text-muted-foreground text-right">{effortUnit}</span>
               </div>
               {entry.sets.map((set, i) => (
                 <div
@@ -138,13 +144,13 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
                 >
                   <span className="text-sm text-muted-foreground">{i + 1}</span>
                   <span className="text-sm text-right tabular-nums">
-                    {set.weight != null ? `${set.weight}kg` : '—'}
+                    {set.weight != null ? `${formatWeight(set.weight, unit)}${unit}` : '—'}
                   </span>
                   <span className="text-sm text-right tabular-nums">
                     {set.reps != null ? set.reps : '—'}
                   </span>
                   <span className="text-sm text-right tabular-nums">
-                    {set.effort != null ? set.effort : '—'}
+                    {set.effort != null ? convertEffortForDisplay(set.effort, effortUnit) : '—'}
                   </span>
                 </div>
               ))}

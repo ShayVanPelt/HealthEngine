@@ -10,6 +10,8 @@ import StatCard from '@/components/ui/StatCard';
 import CalendarView from '@/components/workouts/CalendarView';
 import { useToast } from '@/hooks/useToast';
 import type { CalorieEntry } from '@/types';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { formatMacro } from '@/lib/units';
 
 function getTodayString() {
   const d = new Date();
@@ -27,6 +29,9 @@ function formatDisplayDate(dateStr: string) {
 
 export default function CaloriesPage() {
   const { toast } = useToast();
+  const { preferences } = usePreferences();
+  const { macros: macroUnit } = preferences.units;
+  const calLabel = 'Cal';
   const now = new Date();
 
   const [calYear, setCalYear] = useState(now.getFullYear());
@@ -111,10 +116,10 @@ export default function CaloriesPage() {
           className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 animate-fade-in-up"
           style={{ animationDelay: '80ms' }}
         >
-          <StatCard title="Calories" value={totals.calories} unit="kcal" animationDelay="0ms" />
-          <StatCard title="Protein" value={Math.round(totals.protein)} unit="g" animationDelay="60ms" />
-          <StatCard title="Carbs" value={Math.round(totals.carbs)} unit="g" animationDelay="120ms" />
-          <StatCard title="Fat" value={Math.round(totals.fat)} unit="g" animationDelay="180ms" />
+          <StatCard title="Calories" value={totals.calories} unit={calLabel} animationDelay="0ms" />
+          <StatCard title="Protein" value={formatMacro(totals.protein, macroUnit)} unit={macroUnit} animationDelay="60ms" />
+          <StatCard title="Carbs" value={formatMacro(totals.carbs, macroUnit)} unit={macroUnit} animationDelay="120ms" />
+          <StatCard title="Fat" value={formatMacro(totals.fat, macroUnit)} unit={macroUnit} animationDelay="180ms" />
         </div>
       )}
 

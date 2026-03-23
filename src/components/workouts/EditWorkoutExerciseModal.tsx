@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/useToast';
 import type { WorkoutExercise } from '@/types';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { convertWeight, weightInputToKg, weightMaxForUnit, weightRangeLabel, convertEffortForDisplay, convertEffortForStorage, effortMin, effortMax, effortRangeLabel } from '@/lib/units';
 
 interface SetDraft {
   weight: string;
@@ -27,11 +29,15 @@ interface EditWorkoutExerciseModalProps {
   onWorkoutDeleted: () => void;
 }
 
-function toDraft(set: { weight: number | null; reps: number | null; effort: number | null }): SetDraft {
+function toDraft(
+  set: { weight: number | null; reps: number | null; effort: number | null },
+  liftUnit: 'kg' | 'lbs',
+  effortUnit: 'RPE' | 'RIR'
+): SetDraft {
   return {
-    weight: set.weight != null ? String(set.weight) : '',
+    weight: set.weight != null ? String(convertWeight(set.weight, liftUnit)) : '',
     reps: set.reps != null ? String(set.reps) : '',
-    effort: set.effort != null ? String(set.effort) : '',
+    effort: set.effort != null ? String(convertEffortForDisplay(set.effort, effortUnit)) : '',
   };
 }
 
@@ -47,7 +53,11 @@ export default function EditWorkoutExerciseModal({
   onWorkoutDeleted,
 }: EditWorkoutExerciseModalProps) {
   const { toast } = useToast();
-  const [sets, setSets] = useState<SetDraft[]>(workoutExercise.sets.map(toDraft));
+  const { preferences } = usePreferences();
+  const liftUnit = preferences.units.liftingWeight;
+  const liftMax = weightMaxForUnit(liftUnit);
+  const effortUnit = preferences.units.effort;
+  const [sets, setSets] = useState<SetDraft[]>(() => workoutExercise.sets.map((s) => toDraft(s, liftUnit, effortUnit)));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -76,8 +86,8 @@ export default function EditWorkoutExerciseModal({
       const setNum = i + 1;
       if (s.weight !== '') {
         const w = parseFloat(s.weight);
-        if (isNaN(w) || w < 0 || w > 500) {
-          setError(`Set ${setNum}: weight must be 0–500 kg`);
+        if (isNaN(w) || w < 0 || w > liftMax) {
+          setError(`Set ${setNum}: weight must be ${weightRangeLabel(liftUnit)}`);
           return;
         }
       }
@@ -90,8 +100,8 @@ export default function EditWorkoutExerciseModal({
       }
       if (s.effort !== '') {
         const e = parseInt(s.effort, 10);
-        if (isNaN(e) || e < 1 || e > 10) {
-          setError(`Set ${setNum}: RPE must be 1–10`);
+        if (isNaN(e) || e < effortMin(effortUnit) || e > effortMax(effortUnit)) {
+          setError(`Set ${setNum}: ${effortRangeLabel(effortUnit)}`);
           return;
         }
       }
@@ -106,9 +116,9 @@ export default function EditWorkoutExerciseModal({
         body: JSON.stringify({
           workoutExerciseId: workoutExercise.id,
           sets: sets.map((s) => ({
-            weight: s.weight !== '' ? parseFloat(s.weight) : null,
+            weight: s.weight !== '' ? weightInputToKg(parseFloat(s.weight), liftUnit) : null,
             reps: s.reps !== '' ? parseInt(s.reps, 10) : null,
-            effort: s.effort !== '' ? parseInt(s.effort, 10) : null,
+            effort: s.effort !== '' ? convertEffortForStorage(parseInt(s.effort, 10), effortUnit) : null,
           })),
         }),
       });
@@ -156,9 +166,9 @@ export default function EditWorkoutExerciseModal({
           {/* Column headers */}
           <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.25rem] gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">#</span>
-            <span className="text-xs font-medium text-muted-foreground text-center">kg</span>
+            <span className="text-xs font-medium text-muted-foreground text-center">{liftUnit}</span>
             <span className="text-xs font-medium text-muted-foreground text-center">Reps</span>
-            <span className="text-xs font-medium text-muted-foreground text-center">RPE</span>
+            <span className="text-xs font-medium text-muted-foreground text-center">{effortUnit}</span>
             <span />
           </div>
 
@@ -176,9 +186,9 @@ export default function EditWorkoutExerciseModal({
                   value={set.weight}
                   onChange={(e) => updateSet(idx, 'weight', e.target.value)}
                   min="0"
-                  max="500"
+                  max={String(liftMax)}
                   step="0.5"
-                  aria-label={`Set ${idx + 1} weight`}
+                  aria-label={`Set ${idx + 1} weight in ${liftUnit}`}
                   className="text-center text-sm h-8 px-1"
                 />
                 <Input
@@ -196,9 +206,9 @@ export default function EditWorkoutExerciseModal({
                   placeholder="—"
                   value={set.effort}
                   onChange={(e) => updateSet(idx, 'effort', e.target.value)}
-                  min="1"
-                  max="10"
-                  aria-label={`Set ${idx + 1} RPE`}
+                  min={String(effortMin(effortUnit))}
+                  max={String(effortMax(effortUnit))}
+                  aria-label={`Set ${idx + 1} ${effortUnit}`}
                   className="text-center text-sm h-8 px-1"
                 />
                 <button

@@ -6,8 +6,12 @@ import WeightList from '@/components/lists/WeightList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/components/ui/StatCard';
 import type { WeightEntry } from '@/types';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { formatWeight } from '@/lib/units';
 
 export default function WeightPage() {
+  const { preferences } = usePreferences();
+  const unit = preferences.units.bodyWeight;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteError, setDeleteError] = useState('');
@@ -56,8 +60,8 @@ export default function WeightPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 sm:mb-8">
           <StatCard
             title="Current Weight"
-            value={latest ? latest.weight : '--'}
-            unit={latest ? 'kg' : undefined}
+            value={latest ? formatWeight(latest.weight, unit) : '--'}
+            unit={latest ? unit : undefined}
             subtitle={
               latest
                 ? new Date(latest.createdAt).toLocaleDateString('en-US', {
@@ -74,8 +78,8 @@ export default function WeightPage() {
           />
           <StatCard
             title="Trend"
-            value={trend ? `${Number(trend) > 0 ? '+' : ''}${trend}` : '--'}
-            unit={trend ? 'kg' : undefined}
+            value={trend ? `${Number(trend) > 0 ? '+' : Number(trend) < 0 ? '-' : ''}${formatWeight(Math.abs(Number(trend)), unit)}` : '--'}
+            unit={trend ? unit : undefined}
             subtitle={trend ? 'vs previous entry' : 'Need 2+ entries'}
           />
         </div>

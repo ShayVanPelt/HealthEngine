@@ -3,6 +3,8 @@
 import type { CalorieEntry } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { formatMacro } from '@/lib/units';
 
 interface CalorieListProps {
   entries: CalorieEntry[];
@@ -17,6 +19,10 @@ export default function CalorieList({
   emptyTitle = 'No entries yet',
   emptySubtitle = 'Log your first meal to get started',
 }: CalorieListProps) {
+  const { preferences } = usePreferences();
+  const { macros: macroUnit } = preferences.units;
+  const calLabel = 'Cal';
+
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl">
@@ -42,7 +48,7 @@ export default function CalorieList({
                 {/* Calories */}
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-lg font-black text-primary tabular-nums">{entry.calories}</span>
-                  <span className="text-xs text-muted-foreground">kcal</span>
+                  <span className="text-xs text-muted-foreground">{calLabel}</span>
                 </div>
 
                 {/* Macros */}
@@ -50,17 +56,17 @@ export default function CalorieList({
                   <div className="flex gap-3 mt-1">
                     {entry.protein !== null && (
                       <span className="text-xs text-muted-foreground">
-                        P <span className="font-semibold text-foreground">{entry.protein}g</span>
+                        P <span className="font-semibold text-foreground">{formatMacro(entry.protein, macroUnit)}{macroUnit}</span>
                       </span>
                     )}
                     {entry.carbs !== null && (
                       <span className="text-xs text-muted-foreground">
-                        C <span className="font-semibold text-foreground">{entry.carbs}g</span>
+                        C <span className="font-semibold text-foreground">{formatMacro(entry.carbs, macroUnit)}{macroUnit}</span>
                       </span>
                     )}
                     {entry.fat !== null && (
                       <span className="text-xs text-muted-foreground">
-                        F <span className="font-semibold text-foreground">{entry.fat}g</span>
+                        F <span className="font-semibold text-foreground">{formatMacro(entry.fat, macroUnit)}{macroUnit}</span>
                       </span>
                     )}
                   </div>

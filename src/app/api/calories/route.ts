@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');   // YYYY-MM-DD
     const month = searchParams.get('month'); // YYYY-MM
 
     if (month) {
-      // Return array of date strings that have calorie entries in this month
       const [year, mon] = month.split('-').map(Number);
       const start = new Date(year, mon - 1, 1);
       const end = new Date(year, mon, 1);
 
       const entries = await prisma.calorieEntry.findMany({
-        where: { userId: session.userId, createdAt: { gte: start, lt: end } },
+        where: { userId: auth.session.userId, createdAt: { gte: start, lt: end } },
         select: { createdAt: true },
       });
 
@@ -35,22 +32,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (date) {
-      // Filter entries for a specific date
       const [year, mon, day] = date.split('-').map(Number);
       const start = new Date(year, mon - 1, day, 0, 0, 0, 0);
       const end = new Date(year, mon - 1, day, 23, 59, 59, 999);
 
       const entries = await prisma.calorieEntry.findMany({
-        where: { userId: session.userId, createdAt: { gte: start, lte: end } },
+        where: { userId: auth.session.userId, createdAt: { gte: start, lte: end } },
         orderBy: { createdAt: 'desc' },
       });
 
       return NextResponse.json({ success: true, data: entries });
     }
 
-    // Default: return all entries
     const entries = await prisma.calorieEntry.findMany({
-      where: { userId: session.userId },
+      where: { userId: auth.session.userId },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -63,10 +58,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { mealName, calories, protein, carbs, fat } = await request.json();
 
@@ -80,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const entry = await prisma.calorieEntry.create({
       data: {
-        userId: session.userId,
+        userId: auth.session.userId,
         mealName: mealName.trim(),
         calories,
         protein: protein ?? null,

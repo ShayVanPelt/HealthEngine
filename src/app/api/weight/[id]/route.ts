@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-utils';
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { id } = await params;
 
     const entry = await prisma.weightEntry.findFirst({
-      where: { id, userId: session.userId },
+      where: { id, userId: auth.session.userId },
     });
 
     if (!entry) {

@@ -77,6 +77,25 @@ export interface UserGoal {
   updatedAt: string;
 }
 
+// — Preferences —
+
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type WeightUnit = 'kg' | 'lbs';
+export type MacroUnit = 'g' | 'oz';
+export type EffortUnit = 'RPE' | 'RIR';
+
+export interface UnitPreferences {
+  bodyWeight: WeightUnit;
+  liftingWeight: WeightUnit;
+  macros: MacroUnit;
+  effort: EffortUnit;
+}
+
+export interface AppPreferences {
+  theme: ThemePreference;
+  units: UnitPreferences;
+}
+
 // — Dashboard trend/insight types —
 
 export interface StatTrend {

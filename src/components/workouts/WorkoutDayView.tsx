@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import type { Workout, WorkoutExercise } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import EditWorkoutExerciseModal from './EditWorkoutExerciseModal';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { formatWeight, convertWeight, convertEffortForDisplay } from '@/lib/units';
 
 interface WorkoutDayViewProps {
   date: string;
@@ -41,6 +43,9 @@ function PencilIcon() {
 
 export default function WorkoutDayView({ date, workouts, loading, onRefresh }: WorkoutDayViewProps) {
   const [editing, setEditing] = useState<{ workoutId: string; workoutExercise: WorkoutExercise } | null>(null);
+  const { preferences } = usePreferences();
+  const liftUnit = preferences.units.liftingWeight;
+  const effortUnit = preferences.units.effort;
 
   const { totalSets, totalExercises, totalVolume, exercises } = useMemo(() => {
     let sets = 0;
@@ -108,7 +113,7 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
             </span>
             {totalVolume > 0 && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {totalVolume.toLocaleString()} kg vol
+                {Math.round(convertWeight(totalVolume, liftUnit)).toLocaleString()} {liftUnit} vol
               </span>
             )}
           </div>
@@ -127,7 +132,7 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
                   <h3 className="font-bold text-base truncate">{we.exercise.name}</h3>
                   {volume > 0 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {volume.toLocaleString()} kg total volume
+                      {Math.round(convertWeight(volume, liftUnit)).toLocaleString()} {liftUnit} total volume
                     </p>
                   )}
                 </div>
@@ -150,7 +155,7 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Set</span>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">Weight</span>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">Reps</span>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">RPE</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">{effortUnit}</span>
                 </div>
                 <div className="space-y-0">
                   {we.sets.map((set, i) => (
@@ -160,13 +165,13 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
                     >
                       <span className="text-sm font-bold text-muted-foreground">{i + 1}</span>
                       <span className="text-sm font-semibold text-right tabular-nums">
-                        {set.weight != null ? `${set.weight}kg` : '—'}
+                        {set.weight != null ? `${formatWeight(set.weight, liftUnit)}${liftUnit}` : '—'}
                       </span>
                       <span className="text-sm font-semibold text-right tabular-nums">
                         {set.reps != null ? set.reps : '—'}
                       </span>
                       <span className="text-sm font-semibold text-right tabular-nums">
-                        {set.effort != null ? set.effort : '—'}
+                        {set.effort != null ? convertEffortForDisplay(set.effort, effortUnit) : '—'}
                       </span>
                     </div>
                   ))}

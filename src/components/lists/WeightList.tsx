@@ -3,6 +3,8 @@
 import type { WeightEntry } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { formatWeight } from '@/lib/units';
 
 interface WeightListProps {
   entries: WeightEntry[];
@@ -10,6 +12,9 @@ interface WeightListProps {
 }
 
 export default function WeightList({ entries, onDelete }: WeightListProps) {
+  const { preferences } = usePreferences();
+  const unit = preferences.units.bodyWeight;
+
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground py-4">No weight entries yet.</p>;
   }
@@ -21,8 +26,8 @@ export default function WeightList({ entries, onDelete }: WeightListProps) {
           <CardContent className="p-4 flex items-start justify-between">
             <div>
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-2xl font-bold text-primary">{entry.weight}</span>
-                <span className="text-sm text-muted-foreground">kg</span>
+                <span className="text-2xl font-bold text-primary">{formatWeight(entry.weight, unit)}</span>
+                <span className="text-sm text-muted-foreground">{unit}</span>
                 {entry.bodyFat !== null && (
                   <span className="text-sm text-muted-foreground">{entry.bodyFat}% body fat</span>
                 )}
@@ -38,10 +43,11 @@ export default function WeightList({ entries, onDelete }: WeightListProps) {
               </p>
             </div>
             <Button
-              variant="destructive"
+              variant="ghost"
               size="sm"
-              aria-label={`Delete ${entry.weight}kg entry`}
+              aria-label={`Delete ${formatWeight(entry.weight, unit)}${unit} entry`}
               onClick={() => onDelete(entry.id)}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
             >
               Delete
             </Button>

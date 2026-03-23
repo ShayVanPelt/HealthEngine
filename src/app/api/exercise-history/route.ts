@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const exerciseId = searchParams.get('exerciseId');
@@ -16,9 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'exerciseId query param is required' }, { status: 400 });
     }
 
-    // Verify the exercise belongs to this user
     const exercise = await prisma.exercise.findFirst({
-      where: { id: exerciseId, userId: session.userId },
+      where: { id: exerciseId, userId: auth.session.userId },
     });
     if (!exercise) {
       return NextResponse.json({ error: 'Exercise not found' }, { status: 404 });
@@ -27,7 +24,7 @@ export async function GET(request: NextRequest) {
     const history = await prisma.workoutExercise.findMany({
       where: {
         exerciseId,
-        workout: { userId: session.userId },
+        workout: { userId: auth.session.userId },
       },
       include: {
         workout: { select: { id: true, date: true } },

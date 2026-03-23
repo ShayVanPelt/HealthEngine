@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/useToast';
 import type { Exercise } from '@/types';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { weightInputToKg, weightMaxForUnit, weightRangeLabel, convertEffortForStorage, convertEffortForDisplay, effortMin, effortMax, effortRangeLabel } from '@/lib/units';
 
 interface SetDraft {
   weight: string;
@@ -64,6 +66,10 @@ function emptySet(): SetDraft {
 
 export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWorkoutModalProps) {
   const { toast } = useToast();
+  const { preferences } = usePreferences();
+  const liftUnit = preferences.units.liftingWeight;
+  const liftMax = weightMaxForUnit(liftUnit);
+  const effortUnit = preferences.units.effort;
   const [date, setDate] = useState(getTodayString);
   const [drafts, setDrafts] = useState<ExerciseDraft[]>([]);
   const [loading, setLoading] = useState(false);
@@ -145,8 +151,8 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
         const setNum = i + 1;
         if (s.weight !== '') {
           const w = parseFloat(s.weight);
-          if (isNaN(w) || w < 0 || w > 500) {
-            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: weight must be 0–500 kg`);
+          if (isNaN(w) || w < 0 || w > liftMax) {
+            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: weight must be ${weightRangeLabel(liftUnit)}`);
             return;
           }
         }
@@ -159,8 +165,8 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
         }
         if (s.effort !== '') {
           const e = parseInt(s.effort, 10);
-          if (isNaN(e) || e < 1 || e > 10) {
-            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: RPE must be 1–10`);
+          if (isNaN(e) || e < effortMin(effortUnit) || e > effortMax(effortUnit)) {
+            setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: ${effortRangeLabel(effortUnit)}`);
             return;
           }
         }
@@ -176,9 +182,9 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
         exercises: drafts.map((ex) => ({
           exerciseId: ex.exerciseId,
           sets: ex.sets.map((s) => ({
-            weight: s.weight !== '' ? parseFloat(s.weight) : null,
+            weight: s.weight !== '' ? weightInputToKg(parseFloat(s.weight), liftUnit) : null,
             reps: s.reps !== '' ? parseInt(s.reps, 10) : null,
-            effort: s.effort !== '' ? parseInt(s.effort, 10) : null,
+            effort: s.effort !== '' ? convertEffortForStorage(parseInt(s.effort, 10), effortUnit) : null,
           })),
         })),
       };
@@ -289,9 +295,9 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                 {/* Column headers */}
                 <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.25rem] gap-1.5 px-4 pt-3 pb-1">
                   <span className="text-xs font-medium text-muted-foreground">#</span>
-                  <span className="text-xs font-medium text-muted-foreground text-center">kg</span>
+                  <span className="text-xs font-medium text-muted-foreground text-center">{liftUnit}</span>
                   <span className="text-xs font-medium text-muted-foreground text-center">Reps</span>
-                  <span className="text-xs font-medium text-muted-foreground text-center">RPE</span>
+                  <span className="text-xs font-medium text-muted-foreground text-center">{effortUnit}</span>
                   <span />
                 </div>
 
@@ -309,9 +315,9 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                         value={set.weight}
                         onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
                         min="0"
-                        max="500"
+                        max={String(liftMax)}
                         step="0.5"
-                        aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} weight in kg`}
+                        aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} weight in ${liftUnit}`}
                         className="text-center text-sm h-8 px-1"
                       />
                       <Input
@@ -329,9 +335,9 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                         placeholder="—"
                         value={set.effort}
                         onChange={(e) => updateSet(exIdx, setIdx, 'effort', e.target.value)}
-                        min="1"
-                        max="10"
-                        aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} RPE`}
+                        min={String(effortMin(effortUnit))}
+                        max={String(effortMax(effortUnit))}
+                        aria-label={`${exercise?.name ?? 'Exercise'} set ${setIdx + 1} ${effortUnit}`}
                         className="text-center text-sm h-8 px-1"
                       />
                       <Button

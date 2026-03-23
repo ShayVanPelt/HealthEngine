@@ -39,11 +39,12 @@ src/
     globals.css              # Tailwind base + scrollbar + animation keyframes/utilities
     (auth)/login/page.tsx    # 2-step OTP login (client component)
     (dashboard)/
-      layout.tsx             # Wraps all dashboard pages with TopNav + ToastProvider
-      dashboard/page.tsx     # Server component — stats, trends, goals, quick actions
+      layout.tsx             # Wraps all dashboard pages with PreferencesProvider + ToastProvider + TopNav
+      dashboard/page.tsx     # Server component — fetches raw data, renders DashboardStats + quick actions + GoalSetupCard
       workouts/page.tsx      # Client component — workout calendar + exercise history
       calories/page.tsx      # Client component — log + list calories + CalendarView date selector + per-day totals
       weight/page.tsx        # Client component — log + list weight + trend
+      settings/page.tsx      # Client component — theme + unit preferences UI
     api/
       auth/send-code/        # POST — generate OTP, store in DB, mock-email it
       auth/verify-code/      # POST — validate OTP, create session cookie
@@ -62,7 +63,8 @@ src/
     ui/StatCard.tsx          # Big number stat display — supports trend chip + progress bar
     ui/ToastProvider.tsx     # Context-based toast system (success/error/info) — wraps dashboard layout
     dashboard/
-      GoalSetupCard.tsx      # Full-width goals display + inline edit form (client)
+      GoalSetupCard.tsx      # Full-width goals display + inline edit form (client) — unit-aware
+      DashboardStats.tsx     # Client component — renders stat cards + suggestions with unit-aware display; receives raw numbers from Server Component dashboard/page.tsx
     forms/CalorieForm.tsx    # Controlled form → POST /api/calories
     forms/WeightForm.tsx     # Controlled form → POST /api/weight
     lists/CalorieList.tsx    # Calorie entry list with ghost delete button + empty state
@@ -76,10 +78,13 @@ src/
       ExerciseHistoryView.tsx    # Shows historical sets for a chosen exercise
   hooks/
     useToast.ts              # Hook — returns { toast(message, variant) } from ToastContext
+  contexts/
+    PreferencesContext.tsx   # React context — theme + unit preferences; persisted to localStorage; exposes usePreferences()
   lib/
     prisma.ts                # Singleton PrismaClient (safe for hot reload in dev)
     session.ts               # SessionData type, sessionOptions, getSession() helper
     email.ts                 # sendVerificationEmail() — mock or AWS SES
+    units.ts                 # Pure unit conversion + formatting utilities (kg↔lbs, g↔oz, kcal/Cal)
   types/index.ts             # Shared TS interfaces (CalorieEntry, Workout, UserGoal, StatTrend…)
 prisma/
   schema.prisma              # DB models (see below)
@@ -175,15 +180,52 @@ progress?: {
 }
 ```
 
+## Preferences system
+
+`PreferencesProvider` (in `src/contexts/PreferencesContext.tsx`) wraps the dashboard layout and exposes preferences + setters via `usePreferences()`.
+
+```ts
+import { usePreferences } from '@/contexts/PreferencesContext';
+
+const { preferences, setTheme, setUnits } = usePreferences();
+// preferences.theme: 'light' | 'dark' | 'system'
+// preferences.units.bodyWeight: 'kg' | 'lbs'
+// preferences.units.liftingWeight: 'kg' | 'lbs'
+// preferences.units.macros: 'g' | 'oz'
+// preferences.units.calories: 'kcal' | 'Cal'
+
+setTheme('system');                            // immediately applies DOM class + writes localStorage
+setUnits({ bodyWeight: 'lbs' });              // partial update, persisted to localStorage
+```
+
+- Stored in `localStorage` key `healthengine_prefs` (JSON)
+- `localStorage.theme` key is also kept in sync for the root layout inline script (FOUC prevention)
+- Theme 'system' attaches a `matchMedia` listener so it updates live when OS preference changes
+- **All DB values stay in base units** (kg, g, kcal) — only display and form entry convert
+- Unit conversion helpers live in `src/lib/units.ts`:
+  - `formatWeight(kg, unit)` / `formatWeightWithUnit(kg, unit)` — display
+  - `formatMacro(g, unit)` / `formatMacroWithUnit(g, unit)` — display
+  - `calorieUnitLabel(unit)` — `'kcal'` or `'Cal'` (no numeric conversion)
+  - `weightInputToKg(input, unit)` / `macroInputToG(input, unit)` — form submit
+  - `weightMaxForUnit(unit)` / `weightRangeLabel(unit)` — validation
+  - `convertWeight(kg, unit)` / `convertMacro(g, unit)` — raw numeric conversion
+
 ## Dashboard page architecture
 `dashboard/page.tsx` is a **Server Component** that fetches all data in a single `Promise.all`, then renders:
 1. Header + email
-2. Three `StatCard`s — calories (today vs yesterday + goal progress), weight (vs prev entry), workouts (vs last week + goal progress)
-3. Smart suggestions panel — context-aware nudges based on streak, calorie gap, weekly goal
-4. Quick Actions — three full-width cards linking to /workouts, /calories, /weight
-5. `GoalSetupCard` — full-width, shows goal chips when set; inline 3-col edit form when editing
+2. `DashboardStats` (Client Component) — receives raw numbers; reads unit preferences; renders three stat cards + smart suggestions
+3. Quick Actions — three full-width cards linking to /workouts, /calories, /weight
+4. `GoalSetupCard` — full-width, shows goal chips when set; inline 3-col edit form when editing
 
-When passing Prisma model data (which has `Date` objects) to Client Components, always extract and serialize the relevant fields explicitly — do not pass raw Prisma objects as props.
+**Pattern for Server → Client with units:** Server components fetch numbers and pass them as plain props to a `'use client'` component, which calls `usePreferences()` to format for display. Never pass raw Prisma objects — extract and serialize fields explicitly.
+
+## Workout input validation
+All set fields are validated before submission in both `AddWorkoutModal` and `EditWorkoutExerciseModal`. Validation ranges adapt to the user's unit preference:
+- Weight: 0–500 kg / 0–1102 lbs (uses `weightMaxForUnit` from `src/lib/units.ts`)
+- Reps: 1–50
+- RPE (effort): 1–10
+
+Inputs also have HTML `min`/`max` attributes for browser-level hints.
 
 ## Workout input validation
 All set fields are validated before submission in both `AddWorkoutModal` and `EditWorkoutExerciseModal`:

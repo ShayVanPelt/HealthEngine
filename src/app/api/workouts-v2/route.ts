@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
     const month = searchParams.get('month');
 
     if (month) {
-      // Return distinct dates that have workouts — used for calendar highlighting
       const [year, monthNum] = month.split('-').map(Number);
       const startOfMonth = new Date(`${month}-01T00:00:00.000Z`);
       const nextMonthStr =
@@ -25,7 +22,7 @@ export async function GET(request: NextRequest) {
 
       const workouts = await prisma.workout.findMany({
         where: {
-          userId: session.userId,
+          userId: auth.session.userId,
           date: { gte: startOfMonth, lt: startOfNextMonth },
         },
         select: { date: true },
@@ -36,13 +33,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (date) {
-      // Return full workout data for a specific calendar date
       const dayStart = new Date(`${date}T00:00:00.000Z`);
       const dayEnd = new Date(`${date}T23:59:59.999Z`);
 
       const workouts = await prisma.workout.findMany({
         where: {
-          userId: session.userId,
+          userId: auth.session.userId,
           date: { gte: dayStart, lte: dayEnd },
         },
         include: {
@@ -82,10 +78,8 @@ interface ExerciseInput {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const body = await request.json();
     const { date, exercises } = body as { date: string; exercises: ExerciseInput[] };
@@ -97,10 +91,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate all exercise IDs belong to this user
     const exerciseIds = exercises.map((e) => e.exerciseId);
     const owned = await prisma.exercise.findMany({
-      where: { id: { in: exerciseIds }, userId: session.userId },
+      where: { id: { in: exerciseIds }, userId: auth.session.userId },
       select: { id: true },
     });
     if (owned.length !== exerciseIds.length) {
@@ -109,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     const workout = await prisma.workout.create({
       data: {
-        userId: session.userId,
+        userId: auth.session.userId,
         date: new Date(`${date}T00:00:00.000Z`),
         workoutExercises: {
           create: exercises.map((ex) => ({

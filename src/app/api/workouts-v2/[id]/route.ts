@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-utils';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -11,16 +11,14 @@ interface RouteContext {
 // If the workout has no remaining exercises after deletion, it is also deleted.
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { id } = await params;
     const exerciseId = new URL(req.url).searchParams.get('exerciseId');
 
     const workout = await prisma.workout.findFirst({
-      where: { id, userId: session.userId },
+      where: { id, userId: auth.session.userId },
       include: { workoutExercises: { select: { id: true } } },
     });
 
@@ -36,7 +34,6 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
       await prisma.workoutExercise.delete({ where: { id: exerciseId } });
 
-      // Clean up the parent workout if it's now empty
       if (workout.workoutExercises.length === 1) {
         await prisma.workout.delete({ where: { id } });
       }
@@ -61,10 +58,8 @@ interface SetInput {
 // Body: { workoutExerciseId: string, sets: SetInput[] }
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (!auth.ok) return auth.response;
 
     const { id } = await params;
     const body = await req.json();
@@ -80,9 +75,8 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    // Verify the workout belongs to this user
     const workout = await prisma.workout.findFirst({
-      where: { id, userId: session.userId },
+      where: { id, userId: auth.session.userId },
       include: { workoutExercises: { select: { id: true } } },
     });
 
@@ -95,7 +89,6 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Exercise not found in workout' }, { status: 404 });
     }
 
-    // Replace all sets: delete existing, create new
     await prisma.workoutSet.deleteMany({ where: { workoutExerciseId } });
 
     if (sets.length > 0) {
@@ -109,7 +102,6 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       });
     }
 
-    // Return updated workout
     const updated = await prisma.workoutExercise.findUnique({
       where: { id: workoutExerciseId },
       include: {

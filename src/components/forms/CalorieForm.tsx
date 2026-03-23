@@ -4,12 +4,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { macroInputToG } from '@/lib/units';
 
 interface CalorieFormProps {
   onSuccess: () => void;
 }
 
 export default function CalorieForm({ onSuccess }: CalorieFormProps) {
+  const { preferences } = usePreferences();
+  const macroUnit = preferences.units.macros;
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ mealName?: string; calories?: string; api?: string }>({});
   const [form, setForm] = useState({ mealName: '', calories: '', protein: '', carbs: '', fat: '' });
@@ -44,9 +48,9 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
         body: JSON.stringify({
           mealName: form.mealName.trim(),
           calories: parseInt(form.calories),
-          protein: form.protein ? parseFloat(form.protein) : null,
-          carbs: form.carbs ? parseFloat(form.carbs) : null,
-          fat: form.fat ? parseFloat(form.fat) : null,
+          protein: form.protein ? macroInputToG(parseFloat(form.protein), macroUnit) : null,
+          carbs: form.carbs ? macroInputToG(parseFloat(form.carbs), macroUnit) : null,
+          fat: form.fat ? macroInputToG(parseFloat(form.fat), macroUnit) : null,
         }),
       });
 
@@ -106,7 +110,7 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(['protein', 'carbs', 'fat'] as const).map((macro) => (
           <div key={macro} className="space-y-1.5">
-            <Label htmlFor={macro} className="capitalize">{macro} (g)</Label>
+            <Label htmlFor={macro} className="capitalize">{macro} ({macroUnit})</Label>
             <Input
               id={macro}
               type="number"
