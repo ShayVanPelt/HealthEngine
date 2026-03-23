@@ -9,8 +9,7 @@ const AUTH_ONLY = ['/login'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // getIronSession works with request.cookies (ReadonlyRequestCookies) in Edge runtime
-  const session = await getIronSession<SessionData>(request.cookies, sessionOptions);
+  const session = await getIronSession<SessionData>(request, NextResponse.next(), sessionOptions);
   const isLoggedIn = session.isLoggedIn === true;
 
   const isProtected = PROTECTED.some((p) => pathname.startsWith(p));
