@@ -48,11 +48,15 @@ export default function CaloriesPage() {
       if (res.ok) {
         const data = await res.json();
         setEntries(data.data ?? []);
+      } else {
+        toast('Failed to load entries', 'error');
       }
+    } catch {
+      toast('Failed to load entries', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const fetchCalorieDates = useCallback(async (year: number, month: number) => {
     try {
@@ -62,7 +66,9 @@ export default function CaloriesPage() {
         const { data } = await res.json();
         setCalorieDates(data ?? []);
       }
-    } catch {}
+    } catch {
+      // Non-critical: calendar highlighting fails silently
+    }
   }, []);
 
   useEffect(() => { fetchEntries(selectedDate); }, [selectedDate, fetchEntries]);
@@ -80,14 +86,18 @@ export default function CaloriesPage() {
   }, [fetchEntries, fetchCalorieDates, selectedDate, calYear, calMonth, toast]);
 
   const handleDelete = useCallback(async (id: string) => {
-    const res = await fetch(`/api/calories/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
+    try {
+      const res = await fetch(`/api/calories/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        toast('Failed to delete entry', 'error');
+        return;
+      }
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      fetchCalorieDates(calYear, calMonth);
+      toast('Entry deleted', 'info');
+    } catch {
       toast('Failed to delete entry', 'error');
-      return;
     }
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-    fetchCalorieDates(calYear, calMonth);
-    toast('Entry deleted', 'info');
   }, [calYear, calMonth, fetchCalorieDates, toast]);
 
   const totals = useMemo(() => entries.reduce(

@@ -91,6 +91,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json({ error: 'date must be in YYYY-MM-DD format' }, { status: 400 });
+    }
+
+    for (const ex of exercises) {
+      if (typeof ex.exerciseId !== 'string' || !ex.exerciseId) {
+        return NextResponse.json({ error: 'Each exercise must have a valid exerciseId' }, { status: 400 });
+      }
+      if (!Array.isArray(ex.sets) || ex.sets.length === 0) {
+        return NextResponse.json({ error: 'Each exercise must have at least one set' }, { status: 400 });
+      }
+      for (const s of ex.sets) {
+        if (s.weight !== null && s.weight !== undefined && (typeof s.weight !== 'number' || s.weight < 0 || s.weight > 1000)) {
+          return NextResponse.json({ error: 'Set weight must be between 0 and 1,000 kg' }, { status: 400 });
+        }
+        if (s.reps !== null && s.reps !== undefined && (typeof s.reps !== 'number' || s.reps < 1 || s.reps > 50)) {
+          return NextResponse.json({ error: 'Set reps must be between 1 and 50' }, { status: 400 });
+        }
+        if (s.effort !== null && s.effort !== undefined && (typeof s.effort !== 'number' || s.effort < 1 || s.effort > 10)) {
+          return NextResponse.json({ error: 'Set effort (RPE) must be between 1 and 10' }, { status: 400 });
+        }
+      }
+    }
+
     const exerciseIds = exercises.map((e) => e.exerciseId);
     const owned = await prisma.exercise.findMany({
       where: { id: { in: exerciseIds }, userId: auth.session.userId },

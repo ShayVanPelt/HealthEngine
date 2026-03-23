@@ -15,6 +15,7 @@ import {
 import CalendarView from '@/components/workouts/CalendarView';
 import WorkoutDayView from '@/components/workouts/WorkoutDayView';
 import ExerciseHistoryView from '@/components/workouts/ExerciseHistoryView';
+import { useToast } from '@/hooks/useToast';
 import type { Exercise, Workout, ExerciseHistoryEntry } from '@/types';
 
 const AddExerciseModal = dynamic(() => import('@/components/workouts/AddExerciseModal'), { ssr: false });
@@ -26,6 +27,7 @@ function getTodayString() {
 }
 
 export default function WorkoutsPage() {
+  const { toast } = useToast();
   const now = new Date();
 
   // Calendar / date-mode state
@@ -54,9 +56,13 @@ export default function WorkoutsPage() {
       if (res.ok) {
         const { data } = await res.json();
         setExercises(data ?? []);
+      } else {
+        toast('Failed to load exercises', 'error');
       }
-    } catch {}
-  }, []);
+    } catch {
+      toast('Failed to load exercises', 'error');
+    }
+  }, [toast]);
 
   const fetchWorkoutDates = useCallback(async (year: number, month: number) => {
     try {
@@ -76,11 +82,15 @@ export default function WorkoutsPage() {
       if (res.ok) {
         const { data } = await res.json();
         setDayWorkouts(data ?? []);
+      } else {
+        toast('Failed to load workouts', 'error');
       }
+    } catch {
+      toast('Failed to load workouts', 'error');
     } finally {
       setDayLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const fetchExerciseHistory = useCallback(async (exerciseId: string) => {
     if (!exerciseId) return;
@@ -114,7 +124,8 @@ export default function WorkoutsPage() {
 
   const handleWorkoutAdded = useCallback((date: string) => {
     setSelectedDate(date);
-    Promise.all([fetchWorkoutDates(calYear, calMonth), fetchDayWorkouts(date)]);
+    fetchWorkoutDates(calYear, calMonth);
+    fetchDayWorkouts(date);
   }, [calYear, calMonth, fetchWorkoutDates, fetchDayWorkouts]);
 
   const handleExerciseCreated = (exercise: Exercise) => {
@@ -126,11 +137,9 @@ export default function WorkoutsPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="mb-5 animate-fade-in-up">
-        <h1 className="text-2xl sm:text-3xl font-bold">Workouts</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Track your training, set by set.
-        </p>
+      <div className="mb-8 sm:mb-10 animate-fade-in-up">
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-none">Workouts</h1>
+        <p className="text-muted-foreground mt-3 text-sm">Track your training, set by set.</p>
       </div>
 
       {/* Sticky action bar */}
@@ -205,9 +214,11 @@ export default function WorkoutsPage() {
           <div className="space-y-6 max-w-2xl">
             {/* Exercise picker */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
-                Exercise
-              </p>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Exercise
+                </p>
+              </div>
               {exercises.length === 0 ? (
                 <div className="py-8 text-center border border-dashed border-border rounded-xl">
                   <p className="text-sm text-muted-foreground">No exercises yet.</p>

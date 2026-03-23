@@ -22,11 +22,18 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
     const next: typeof errors = {};
     if (!form.mealName.trim()) {
       next.mealName = 'Meal name is required.';
+    } else if (form.mealName.trim().length > 200) {
+      next.mealName = 'Meal name must be 200 characters or fewer.';
     }
     if (!form.calories.trim()) {
       next.calories = 'Calories is required.';
-    } else if (isNaN(parseInt(form.calories)) || parseInt(form.calories) < 0) {
-      next.calories = 'Enter a valid calorie amount.';
+    } else {
+      const cal = parseInt(form.calories);
+      if (isNaN(cal) || cal < 0) {
+        next.calories = 'Enter a valid calorie amount.';
+      } else if (cal > 50000) {
+        next.calories = 'Calories must be 50,000 or fewer.';
+      }
     }
     return next;
   };
@@ -76,6 +83,7 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
           id="mealName"
           type="text"
           placeholder="e.g. Chicken & Rice, Protein Shake"
+          maxLength={200}
           value={form.mealName}
           onChange={(e) => setForm({ ...form, mealName: e.target.value })}
           aria-invalid={!!errors.mealName}
@@ -95,6 +103,7 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
           type="number"
           placeholder="2000"
           min="0"
+          max="50000"
           value={form.calories}
           onChange={(e) => setForm({ ...form, calories: e.target.value })}
           aria-invalid={!!errors.calories}
@@ -116,6 +125,7 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
               type="number"
               placeholder="0"
               min="0"
+              max="2000"
               step="0.1"
               value={form[macro]}
               onChange={(e) => setForm({ ...form, [macro]: e.target.value })}

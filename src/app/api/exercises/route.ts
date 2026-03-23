@@ -30,6 +30,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'name (string) is required' }, { status: 400 });
     }
 
+    if (name.trim().length > 100) {
+      return NextResponse.json({ error: 'Exercise name must be 100 characters or fewer' }, { status: 400 });
+    }
+
+    const existing = await prisma.exercise.findFirst({
+      where: { userId: auth.session.userId, name: { equals: name.trim(), mode: 'insensitive' } },
+    });
+    if (existing) {
+      return NextResponse.json({ error: 'An exercise with this name already exists' }, { status: 409 });
+    }
+
     const exercise = await prisma.exercise.create({
       data: {
         userId: auth.session.userId,

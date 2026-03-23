@@ -16,7 +16,13 @@ export default function WeightList({ entries, onDelete }: WeightListProps) {
   const unit = preferences.units.bodyWeight;
 
   if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground py-4">No weight entries yet.</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl">
+        <div aria-hidden="true" className="text-3xl mb-2">⚖️</div>
+        <p className="text-sm font-semibold text-foreground">No entries yet</p>
+        <p className="text-xs text-muted-foreground mt-1">Log your first weight to start tracking</p>
+      </div>
+    );
   }
 
   return (

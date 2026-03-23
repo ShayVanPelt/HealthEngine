@@ -16,15 +16,26 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
   const unit = preferences.units.bodyWeight;
   const maxVal = weightMaxForUnit(unit);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ weight?: string; api?: string }>({});
+  const [errors, setErrors] = useState<{ weight?: string; bodyFat?: string; api?: string }>({});
   const [form, setForm] = useState({ weight: '', bodyFat: '' });
 
   const validate = () => {
     const next: typeof errors = {};
     if (!form.weight.trim()) {
       next.weight = 'Weight is required.';
-    } else if (isNaN(parseFloat(form.weight)) || parseFloat(form.weight) <= 0) {
-      next.weight = 'Enter a valid weight greater than 0.';
+    } else {
+      const w = parseFloat(form.weight);
+      if (isNaN(w) || w <= 0) {
+        next.weight = 'Enter a valid weight greater than 0.';
+      } else if (w > maxVal) {
+        next.weight = `Weight must be ${maxVal} ${unit} or less.`;
+      }
+    }
+    if (form.bodyFat.trim()) {
+      const bf = parseFloat(form.bodyFat);
+      if (isNaN(bf) || bf < 0 || bf > 100) {
+        next.bodyFat = 'Body fat must be between 0 and 100.';
+      }
     }
     return next;
   };
@@ -97,7 +108,14 @@ export default function WeightForm({ onSuccess }: WeightFormProps) {
           step="0.1"
           value={form.bodyFat}
           onChange={(e) => setForm({ ...form, bodyFat: e.target.value })}
+          aria-invalid={!!errors.bodyFat}
+          aria-describedby={errors.bodyFat ? 'bodyFat-error' : undefined}
         />
+        {errors.bodyFat && (
+          <p id="bodyFat-error" className="text-sm font-medium text-destructive">
+            {errors.bodyFat}
+          </p>
+        )}
       </div>
 
       {errors.api && (

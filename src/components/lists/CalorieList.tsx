@@ -41,7 +41,7 @@ export default function CalorieList({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 {/* Meal name */}
-                <p className="text-base font-bold truncate">
+                <p className="text-base font-bold truncate" title={entry.mealName ?? undefined}>
                   {entry.mealName ?? 'Meal'}
                 </p>
 

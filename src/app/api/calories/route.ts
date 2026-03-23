@@ -63,12 +63,27 @@ export async function POST(request: NextRequest) {
 
     const { mealName, calories, protein, carbs, fat } = await request.json();
 
-    if (typeof calories !== 'number' || calories < 0) {
-      return NextResponse.json({ error: 'calories (number >= 0) is required' }, { status: 400 });
+    if (typeof calories !== 'number' || calories < 0 || calories > 50000) {
+      return NextResponse.json({ error: 'calories must be a number between 0 and 50,000' }, { status: 400 });
     }
 
     if (!mealName || typeof mealName !== 'string' || !mealName.trim()) {
       return NextResponse.json({ error: 'mealName is required' }, { status: 400 });
+    }
+
+    if (mealName.trim().length > 200) {
+      return NextResponse.json({ error: 'mealName must be 200 characters or fewer' }, { status: 400 });
+    }
+
+    const MAX_MACRO_G = 2000;
+    if (protein !== null && protein !== undefined && (typeof protein !== 'number' || protein < 0 || protein > MAX_MACRO_G)) {
+      return NextResponse.json({ error: `protein must be a number between 0 and ${MAX_MACRO_G}g` }, { status: 400 });
+    }
+    if (carbs !== null && carbs !== undefined && (typeof carbs !== 'number' || carbs < 0 || carbs > MAX_MACRO_G)) {
+      return NextResponse.json({ error: `carbs must be a number between 0 and ${MAX_MACRO_G}g` }, { status: 400 });
+    }
+    if (fat !== null && fat !== undefined && (typeof fat !== 'number' || fat < 0 || fat > MAX_MACRO_G)) {
+      return NextResponse.json({ error: `fat must be a number between 0 and ${MAX_MACRO_G}g` }, { status: 400 });
     }
 
     const entry = await prisma.calorieEntry.create({

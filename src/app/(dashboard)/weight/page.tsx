@@ -8,13 +8,14 @@ import StatCard from '@/components/ui/StatCard';
 import type { WeightEntry } from '@/types';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { formatWeight } from '@/lib/units';
+import { useToast } from '@/hooks/useToast';
 
 export default function WeightPage() {
+  const { toast } = useToast();
   const { preferences } = usePreferences();
   const unit = preferences.units.bodyWeight;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteError, setDeleteError] = useState('');
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -22,25 +23,33 @@ export default function WeightPage() {
       if (res.ok) {
         const data = await res.json();
         setEntries(data.data ?? []);
+      } else {
+        toast('Failed to load weight entries', 'error');
       }
+    } catch {
+      toast('Failed to load weight entries', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
 
   const handleDelete = useCallback(async (id: string) => {
-    setDeleteError('');
-    const res = await fetch(`/api/weight/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      setDeleteError('Failed to delete entry. Please try again.');
-      return;
+    try {
+      const res = await fetch(`/api/weight/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        toast('Failed to delete entry. Please try again.', 'error');
+        return;
+      }
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      toast('Entry deleted', 'info');
+    } catch {
+      toast('Failed to delete entry. Please try again.', 'error');
     }
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+  }, [toast]);
 
   const { latest, trend } = useMemo(() => {
     const latest = entries[0];
@@ -51,9 +60,9 @@ export default function WeightPage() {
 
   return (
     <div>
-      <div className="mb-8 sm:mb-10">
-        <h1 className="text-2xl sm:text-3xl font-bold">Weight / Stats</h1>
-        <p className="text-muted-foreground mt-2 text-sm">Monitor your body composition over time</p>
+      <div className="mb-8 sm:mb-10 animate-fade-in-up">
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-none">Weight</h1>
+        <p className="text-muted-foreground mt-3 text-sm">Monitor your body composition over time</p>
       </div>
 
       {!loading && (
@@ -107,9 +116,6 @@ export default function WeightPage() {
             )}
           </h2>
 
-          {deleteError && (
-            <p role="alert" className="text-sm text-destructive mb-3">{deleteError}</p>
-          )}
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading...</p>
           ) : (

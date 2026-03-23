@@ -26,8 +26,12 @@ export async function POST(request: NextRequest) {
 
     const { weight, bodyFat } = await request.json();
 
-    if (typeof weight !== 'number' || weight <= 0) {
-      return NextResponse.json({ error: 'weight (positive number) is required' }, { status: 400 });
+    if (typeof weight !== 'number' || weight <= 0 || weight > 1000) {
+      return NextResponse.json({ error: 'weight must be a positive number up to 1,000 kg' }, { status: 400 });
+    }
+
+    if (bodyFat !== null && bodyFat !== undefined && (typeof bodyFat !== 'number' || bodyFat < 0 || bodyFat > 100)) {
+      return NextResponse.json({ error: 'bodyFat must be a number between 0 and 100' }, { status: 400 });
     }
 
     const entry = await prisma.weightEntry.create({
