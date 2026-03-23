@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import CalorieForm from '@/components/forms/CalorieForm';
 import CalorieList from '@/components/lists/CalorieList';
+import CalorieBarChart from '@/components/charts/CalorieBarChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,8 @@ export default function CaloriesPage() {
   const [entries, setEntries] = useState<CalorieEntry[]>([]);
   const [calorieDates, setCalorieDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dailyGoal, setDailyGoal] = useState<number | null>(null);
+  const [chartRefreshKey, setChartRefreshKey] = useState(0);
 
   const fetchEntries = useCallback(async (date: string) => {
     setLoading(true);
@@ -73,6 +76,11 @@ export default function CaloriesPage() {
 
   useEffect(() => { fetchEntries(selectedDate); }, [selectedDate, fetchEntries]);
   useEffect(() => { fetchCalorieDates(calYear, calMonth); }, [calYear, calMonth, fetchCalorieDates]);
+  useEffect(() => {
+    fetch('/api/goals').then((r) => r.json()).then((d) => {
+      if (d?.data?.dailyCalories) setDailyGoal(d.data.dailyCalories);
+    }).catch(() => {});
+  }, []);
 
   const handleMonthChange = (year: number, month: number) => {
     setCalYear(year);
@@ -82,6 +90,7 @@ export default function CaloriesPage() {
   const handleSuccess = useCallback(() => {
     fetchEntries(selectedDate);
     fetchCalorieDates(calYear, calMonth);
+    setChartRefreshKey((k) => k + 1);
     toast('Calories logged!', 'success');
   }, [fetchEntries, fetchCalorieDates, selectedDate, calYear, calMonth, toast]);
 
@@ -206,6 +215,18 @@ export default function CaloriesPage() {
                 emptySubtitle="Log a meal above to track your nutrition"
               />
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 30-day calorie history bar chart */}
+      <div className="mt-6 sm:mt-8 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold">30-Day History</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <CalorieBarChart dailyGoal={dailyGoal} refreshKey={chartRefreshKey} />
           </CardContent>
         </Card>
       </div>

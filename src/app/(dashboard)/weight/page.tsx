@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import WeightForm from '@/components/forms/WeightForm';
 import WeightList from '@/components/lists/WeightList';
+import WeightChart from '@/components/charts/WeightChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/components/ui/StatCard';
 import type { WeightEntry } from '@/types';
@@ -91,6 +92,20 @@ export default function WeightPage() {
             unit={trend ? unit : undefined}
             subtitle={trend ? 'vs previous entry' : 'Need 2+ entries'}
           />
+        </div>
+      )}
+
+      {/* Trend chart */}
+      {!loading && entries.length >= 2 && (
+        <div className="mb-6 sm:mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold">Weight Trend</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <WeightChart entries={entries} unit={unit} />
+            </CardContent>
+          </Card>
         </div>
       )}
 

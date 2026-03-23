@@ -56,6 +56,7 @@ src/
       exercise-history/      # GET (?exerciseId=) — per-exercise set history
       calories/              # GET (?date=YYYY-MM-DD | ?month=YYYY-MM | all) + POST (mealName required)
       calories/[id]/         # DELETE
+      calories/summary/      # GET (?days=N, default 30, max 90) — per-day aggregated totals for CalorieBarChart
       weight/                # GET + POST
       weight/[id]/           # DELETE
   components/
@@ -65,6 +66,9 @@ src/
     dashboard/
       GoalSetupCard.tsx      # Full-width goals display + inline edit form (client) — unit-aware
       DashboardStats.tsx     # Client component — renders stat cards + suggestions with unit-aware display; receives raw numbers from Server Component dashboard/page.tsx
+    charts/
+      WeightChart.tsx        # Client — recharts AreaChart; weight trend over last 30 entries; unit-aware
+      CalorieBarChart.tsx    # Client — recharts BarChart; 30-day daily calorie history; fetches /api/calories/summary
     forms/CalorieForm.tsx    # Controlled form → POST /api/calories
     forms/WeightForm.tsx     # Controlled form → POST /api/weight
     lists/CalorieList.tsx    # Calorie entry list with ghost delete button + empty state
@@ -78,6 +82,7 @@ src/
       ExerciseHistoryView.tsx    # Shows historical sets for a chosen exercise
   hooks/
     useToast.ts              # Hook — returns { toast(message, variant) } from ToastContext
+    useChartColors.ts        # Hook — reads CSS variables at runtime; re-reads on dark/light class toggle; used by all chart components
   contexts/
     PreferencesContext.tsx   # React context — theme + unit preferences; persisted to localStorage; exposes usePreferences()
   lib/
@@ -209,6 +214,21 @@ setUnits({ bodyWeight: 'lbs' });              // partial update, persisted to lo
   - `weightInputToKg(input, unit)` / `macroInputToG(input, unit)` — form submit
   - `weightMaxForUnit(unit)` / `weightRangeLabel(unit)` — validation
   - `convertWeight(kg, unit)` / `convertMacro(g, unit)` — raw numeric conversion
+
+## Charts system
+
+recharts is installed for all data visualizations. Chart components live in `src/components/charts/`.
+
+**Theme integration**: use `useChartColors()` hook — reads CSS custom properties from `document.documentElement` via `getComputedStyle`, and observes `class` attribute changes so charts update when dark/light mode is toggled.
+
+**SSR guard**: all chart components use a `mounted` state (`useEffect(() => setMounted(true), [])`) so recharts only renders client-side. While unmounted, they render a skeleton (`bg-muted animate-pulse`).
+
+| Component | Chart type | Data source | Page |
+|---|---|---|---|
+| `WeightChart` | AreaChart | `entries` prop (from weight page state) | Weight page |
+| `CalorieBarChart` | BarChart | `GET /api/calories/summary?days=30` | Calories page |
+
+**`/api/calories/summary`**: new route that returns `{ date, calories, protein, carbs, fat }[]` per day for the last N days. Used exclusively by `CalorieBarChart`.
 
 ## Dashboard page architecture
 `dashboard/page.tsx` is a **Server Component** that fetches all data in a single `Promise.all`, then renders:
