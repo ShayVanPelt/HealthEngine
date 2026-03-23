@@ -118,7 +118,7 @@ export default function WeightChart({ entries, unit }: Props) {
           content={(props) => (
             <CustomTooltip
               active={props.active}
-              payload={props.payload as { value: number }[] | undefined}
+              payload={props.payload as unknown as { value: number }[] | undefined}
               label={props.label as string | undefined}
               unit={unit}
             />
