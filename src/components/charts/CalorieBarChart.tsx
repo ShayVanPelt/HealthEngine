@@ -51,8 +51,9 @@ export default function CalorieBarChart({ dailyGoal, refreshKey }: Props) {
 
   const fetch30Days = useCallback(async () => {
     setLoading(true);
+    const tz = new Date().getTimezoneOffset();
     try {
-      const res = await fetch('/api/calories/summary?days=30');
+      const res = await fetch(`/api/calories/summary?days=30&tz=${tz}`);
       if (res.ok) {
         const json = await res.json();
         setData(json.data ?? []);

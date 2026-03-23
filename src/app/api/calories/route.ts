@@ -33,8 +33,11 @@ export async function GET(request: NextRequest) {
 
     if (date) {
       const [year, mon, day] = date.split('-').map(Number);
-      const start = new Date(year, mon - 1, day, 0, 0, 0, 0);
-      const end = new Date(year, mon - 1, day, 23, 59, 59, 999);
+      // tz = client's getTimezoneOffset() in minutes (e.g. 300 for UTC-5, -60 for UTC+1)
+      // Local midnight in UTC = UTC midnight + tz minutes
+      const tzOffset = Number(searchParams.get('tz') ?? '0');
+      const start = new Date(Date.UTC(year, mon - 1, day, 0, 0, 0, 0) + tzOffset * 60 * 1000);
+      const end = new Date(Date.UTC(year, mon - 1, day, 23, 59, 59, 999) + tzOffset * 60 * 1000);
 
       const entries = await prisma.calorieEntry.findMany({
         where: { userId: auth.session.userId, createdAt: { gte: start, lte: end } },

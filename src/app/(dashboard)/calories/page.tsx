@@ -46,8 +46,9 @@ export default function CaloriesPage() {
 
   const fetchEntries = useCallback(async (date: string) => {
     setLoading(true);
+    const tz = new Date().getTimezoneOffset();
     try {
-      const res = await fetch(`/api/calories?date=${date}`);
+      const res = await fetch(`/api/calories?date=${date}&tz=${tz}`);
       if (res.ok) {
         const data = await res.json();
         setEntries(data.data ?? []);
