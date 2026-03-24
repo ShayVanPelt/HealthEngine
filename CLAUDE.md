@@ -344,6 +344,24 @@ Three utility classes are defined in `globals.css` and automatically disabled fo
 - **Dark mode on all new components**: Use semantic tokens (`bg-background`, `text-foreground`, `border-border`, etc.) so dark mode is automatic. If you must use a raw Tailwind color, always pair it with a `dark:` counterpart. Never use `border-black`, `text-black`, `bg-white`, or `text-gray-*` alone.
 - **Server → Client prop serialization**: When a Server Component passes Prisma model data to a Client Component, extract and pass only the needed fields as a plain object — never pass the raw Prisma result (it contains `Date` objects that conflict with TS string types in shared interfaces).
 
+## PWA (Progressive Web App)
+
+The app is configured as a PWA for iOS Safari "Add to Home Screen" and Android Chrome.
+
+**Files:**
+- `public/manifest.json` — Web App Manifest (name, icons, theme color, display mode)
+- `src/components/ui/SplashScreen.tsx` — Logo splash overlay shown on PWA launch only (detects `display-mode: standalone` / `navigator.standalone`)
+- `src/app/layout.tsx` — exports `viewport` (with `viewportFit: 'cover'`) + `metadata.appleWebApp` + `metadata.manifest`
+
+**Key settings:**
+- `display: "standalone"` in manifest — removes browser chrome when launched from home screen
+- `appleWebApp.statusBarStyle: "black-translucent"` — status bar overlays the app (full-bleed)
+- `viewportFit: "cover"` — content extends behind notch / Dynamic Island
+- `themeColor: "#7c3aed"` — violet-600, tints browser chrome on Android
+- Icons: uses `public/logo.png` — for best results the icon should be 512×512 PNG; iOS crops to a rounded square automatically
+
+**To improve icon quality:** replace `public/logo.png` with a 512×512 version. iOS also benefits from a separate `public/apple-touch-icon.png` at 180×180.
+
 ## Switching to PostgreSQL (production)
 1. Change `prisma/schema.prisma` datasource provider to `"postgresql"`
 2. Set `DATABASE_URL="postgresql://..."` in env
