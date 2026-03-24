@@ -160,13 +160,24 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
+/* Custom scrollbar — hidden on mobile, thin on desktop */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-zinc-100 dark:bg-zinc-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-400 dark:bg-zinc-600;
+  }
 }
-::-webkit-scrollbar-track {
-  @apply bg-zinc-100 dark:bg-zinc-900;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-zinc-400 dark:bg-zinc-600;
+
+@media (pointer: coarse) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    scrollbar-width: none;
+  }
 }
