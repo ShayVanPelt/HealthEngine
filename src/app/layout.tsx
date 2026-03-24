@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/logo.png',
-    apple: '/logo.png', // used as the iOS home screen icon
+    apple: '/apple-touch-icon.png', // 180×180 — used as the iOS home screen icon
   },
 };
 
