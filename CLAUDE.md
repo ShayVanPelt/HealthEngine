@@ -13,7 +13,7 @@ A full-stack fitness tracker built with Next.js 15 (App Router), TypeScript, Tai
 - **Database**: SQLite in dev (`prisma/dev.db`), swap to PostgreSQL for production
 - **ORM**: Prisma
 - **Sessions**: iron-session (encrypted cookie, 1-week expiry)
-- **Email**: Mocked (console.log in dev) — stubbed for AWS SES in prod
+- **Email**: Resend (prod) — console mock in dev
 
 ## Commands
 ```bash
@@ -88,7 +88,7 @@ src/
   lib/
     prisma.ts                # Singleton PrismaClient (safe for hot reload in dev)
     session.ts               # SessionData type, sessionOptions, getSession() helper
-    email.ts                 # sendVerificationEmail() — mock or AWS SES
+    email.ts                 # sendVerificationEmail() — Resend in prod, console mock in dev
     units.ts                 # Pure unit conversion + formatting utilities (kg↔lbs, g↔oz, kcal/Cal)
   types/index.ts             # Shared TS interfaces (CalorieEntry, Workout, UserGoal, StatTrend…)
 prisma/
@@ -367,15 +367,20 @@ The app is configured as a PWA for iOS Safari "Add to Home Screen" and Android C
 2. Set `DATABASE_URL="postgresql://..."` in env
 3. Run `npm run db:migrate`
 
-## Enabling AWS SES (real email)
-In `src/lib/email.ts`, uncomment the SES block and set:
+## Enabling Resend (real email)
+`resend` is already installed. Set these env vars:
 ```
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-SES_FROM_EMAIL=noreply@yourdomain.com
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=noreply@yourdomain.com
 ```
-Then: `npm install @aws-sdk/client-ses`
+The `from` address must match a domain verified in the Resend dashboard.
+
+**Domain verification** (add DNS records shown in Resend dashboard → Domains):
+- TXT `resend._domainkey` — DKIM signing key
+- TXT `@` — SPF record
+- CNAME `em.yourdomain.com` — bounce tracking (optional)
+
+`sendVerificationEmail()` auto-detects `RESEND_API_KEY` and switches from the console mock to real sending.
 
 ## Environment variables
 | Variable | Required | Description |
@@ -383,7 +388,5 @@ Then: `npm install @aws-sdk/client-ses`
 | DATABASE_URL | yes | SQLite file path or Postgres connection string |
 | SESSION_SECRET | yes | Min 32 chars, used to encrypt session cookies |
 | NEXT_PUBLIC_APP_URL | no | Used for absolute URLs |
-| AWS_REGION | prod only | For SES |
-| AWS_ACCESS_KEY_ID | prod only | For SES |
-| AWS_SECRET_ACCESS_KEY | prod only | For SES |
-| SES_FROM_EMAIL | prod only | From address for emails |
+| RESEND_API_KEY | prod only | Resend API key (`re_...`) |
+| RESEND_FROM_EMAIL | prod only | From address — must match verified Resend domain |
