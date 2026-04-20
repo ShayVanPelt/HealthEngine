@@ -44,7 +44,7 @@ src/
       workouts/page.tsx      # Client component — workout calendar + exercise history
       calories/page.tsx      # Client component — log + list calories + CalendarView date selector + per-day totals
       weight/page.tsx        # Client component — log + list weight + trend
-      settings/page.tsx      # Client component — theme + unit preferences UI
+      settings/page.tsx      # Client — theme + units; mobile-only Account card with Sign out (desktop sign out remains in TopNav)
     api/
       auth/send-code/        # POST — generate OTP, store in DB, mock-email it
       auth/verify-code/      # POST — validate OTP, create session cookie
@@ -60,7 +60,9 @@ src/
       weight/                # GET + POST
       weight/[id]/           # DELETE
   components/
-    nav/TopNav.tsx           # Client — nav links + sign out button + theme toggle
+    nav/TopNav.tsx           # Client — desktop: nav links + sign out; mobile: logo only (sign out is on Settings); primary nav is MobileFloatingNav
+    nav/MobileFloatingNav.tsx # Client — sm:hidden; floating bottom tab bar (icons + labels) + safe-area padding
+    nav/dashboard-routes.ts  # Shared hrefs/labels for TopNav + mobile tabs
     ui/StatCard.tsx          # Big number stat display — supports trend chip + progress bar
     ui/ToastProvider.tsx     # Context-based toast system (success/error/info) — wraps dashboard layout
     dashboard/

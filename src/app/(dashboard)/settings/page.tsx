@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,9 +45,17 @@ function UnitRow({ label, options, current, onChange }: UnitRowProps) {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const { preferences, setTheme, setUnits } = usePreferences();
   const { theme } = preferences;
   const { bodyWeight, liftingWeight, macros, effort } = preferences.units;
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  };
 
   return (
     <div>
@@ -123,6 +133,25 @@ export default function SettingsPage() {
                 onChange={(v) => setUnits({ effort: v as EffortUnit })}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Mobile — sign out lives here (tab bar + no header menu on small screens) */}
+        <Card className="sm:hidden">
+          <CardHeader>
+            <CardTitle>Account</CardTitle>
+            <CardDescription>Sign out on this device. You can sign in again anytime.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 w-full rounded-xl border-destructive/35 font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={loggingOut}
+              onClick={() => void handleLogout()}
+            >
+              {loggingOut ? 'Signing out…' : 'Sign out'}
+            </Button>
           </CardContent>
         </Card>
 
