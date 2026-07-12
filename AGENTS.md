@@ -1,4 +1,4 @@
-# HealthEngine — CLAUDE.md
+# HealthEngine — AGENTS.md
 
 > **RULE: Update this file whenever you add, change, or remove any component, API route, DB model, hook, or architectural pattern. This is a living document — keep it current.**
 
@@ -10,16 +10,29 @@ A full-stack fitness tracker built with Next.js 15 (App Router), TypeScript, Tai
 - **Language**: TypeScript (strict)
 - **Styling**: TailwindCSS + shadcn/ui (v4) — black/white/purple theme with dark mode (`darkMode: 'class'`)
 - **UI components**: shadcn/ui — all primitive UI is from shadcn, never hand-rolled
-- **Database**: SQLite in dev (`prisma/dev.db`), swap to PostgreSQL for production
+- **Database**: PostgreSQL via Prisma (Docker locally via `docker-compose.yml`; Neon or any Postgres in production)
 - **ORM**: Prisma
 - **Sessions**: iron-session (encrypted cookie, 1-week expiry)
 - **Email**: Resend (prod) — console mock in dev
+
+## Local development setup
+1. Start Docker Desktop, then run `docker compose up -d` — starts Postgres 16 as `healthengine-pg` on port `5432` (`postgres` / `password` / db `healthengine`)
+2. Copy `.env.example` → `.env` (default `DATABASE_URL` points at local Docker Postgres)
+3. Leave Resend vars commented out in `.env` so OTP codes log to the terminal
+4. `npm install` → `npm run db:migrate` → `npm run db:seed` → `npm run dev`
+5. Do **not** point local `.env` at the production Neon database
+
+```bash
+docker compose up -d      # start local Postgres
+docker compose down       # stop (keeps volume/data)
+docker compose down -v    # stop and wipe DB volume
+```
 
 ## Commands
 ```bash
 npm run dev          # start dev server at localhost:3000
 npm run build        # production build
-npm run db:migrate   # apply Prisma migrations (creates dev.db on first run)
+npm run db:migrate   # apply Prisma migrations to DATABASE_URL
 npm run db:seed      # seed test data (test@example.com)
 npm run db:studio    # open Prisma Studio (visual DB browser)
 npm run db:generate  # regenerate Prisma client after schema changes
@@ -364,10 +377,13 @@ The app is configured as a PWA for iOS Safari "Add to Home Screen" and Android C
 
 **To improve icon quality:** replace `public/logo.png` with a 512×512 version. iOS also benefits from a separate `public/apple-touch-icon.png` at 180×180.
 
-## Switching to PostgreSQL (production)
-1. Change `prisma/schema.prisma` datasource provider to `"postgresql"`
-2. Set `DATABASE_URL="postgresql://..."` in env
-3. Run `npm run db:migrate`
+## Production database
+The schema already uses `provider = "postgresql"`. For production:
+1. Set `DATABASE_URL` to your hosted Postgres URL (e.g. Neon)
+2. Run `prisma migrate deploy` (or your host's migrate step) against that database
+3. Use a strong `SESSION_SECRET` (min 32 chars)
+
+Local Docker Postgres credentials (from `docker-compose.yml`): `postgresql://postgres:password@localhost:5432/healthengine`
 
 ## Enabling Resend (real email)
 `resend` is already installed. Set these env vars:
@@ -387,7 +403,7 @@ The `from` address must match a domain verified in the Resend dashboard.
 ## Environment variables
 | Variable | Required | Description |
 |---|---|---|
-| DATABASE_URL | yes | SQLite file path or Postgres connection string |
+| DATABASE_URL | yes | PostgreSQL connection string (local Docker or hosted) |
 | SESSION_SECRET | yes | Min 32 chars, used to encrypt session cookies |
 | NEXT_PUBLIC_APP_URL | no | Used for absolute URLs |
 | RESEND_API_KEY | prod only | Resend API key (`re_...`) |
