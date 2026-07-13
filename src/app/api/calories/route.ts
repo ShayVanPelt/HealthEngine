@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const auth = await requireAuth();
     if (!auth.ok) return auth.response;
 
-    const { mealName, calories, protein, carbs, fat } = await request.json();
+    const { mealName, calories, protein, carbs, fat, date, tz } = await request.json();
 
     if (typeof calories !== 'number' || calories < 0 || calories > 50000) {
       return NextResponse.json({ error: 'calories must be a number between 0 and 50,000' }, { status: 400 });
@@ -89,6 +89,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `fat must be a number between 0 and ${MAX_MACRO_G}g` }, { status: 400 });
     }
 
+    // Optional backdating: date (YYYY-MM-DD) + tz (client getTimezoneOffset in minutes).
+    // If the selected local day is today, keep the real timestamp; otherwise pin the
+    // entry to the end of that local day so it lands in the right day bucket.
+    let createdAt: Date | undefined;
+    if (date !== undefined && date !== null) {
+      if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return NextResponse.json({ error: 'date must be in YYYY-MM-DD format' }, { status: 400 });
+      }
+      const tzOffset = typeof tz === 'number' ? tz : 0;
+      const [year, mon, day] = date.split('-').map(Number);
+      const dayStart = new Date(Date.UTC(year, mon - 1, day, 0, 0, 0, 0) + tzOffset * 60 * 1000);
+      const dayEnd = new Date(Date.UTC(year, mon - 1, day, 23, 59, 59, 999) + tzOffset * 60 * 1000);
+      const now = new Date();
+      createdAt = now >= dayStart && now <= dayEnd ? undefined : dayEnd;
+    }
+
     const entry = await prisma.calorieEntry.create({
       data: {
         userId: auth.session.userId,
@@ -97,6 +113,7 @@ export async function POST(request: NextRequest) {
         protein: protein ?? null,
         carbs: carbs ?? null,
         fat: fat ?? null,
+        ...(createdAt ? { createdAt } : {}),
       },
     });
 

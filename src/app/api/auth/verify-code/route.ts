@@ -3,6 +3,7 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { type SessionData, sessionOptions } from '@/lib/session';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,13 @@ export async function POST(request: NextRequest) {
 
     if (!email || !code) {
       return NextResponse.json({ error: 'Email and code are required' }, { status: 400 });
+    }
+
+    if (!rateLimit(`verify-code:${email}`, 10, 10 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: 'Too many attempts. Please request a new code in a few minutes.' },
+        { status: 429 }
+      );
     }
 
     // Validate the code

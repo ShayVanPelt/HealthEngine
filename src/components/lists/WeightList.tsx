@@ -1,5 +1,6 @@
 'use client';
 
+import { Scale } from 'lucide-react';
 import type { WeightEntry } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,7 +19,9 @@ export default function WeightList({ entries, onDelete }: WeightListProps) {
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl">
-        <div aria-hidden="true" className="text-3xl mb-2">⚖️</div>
+        <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-muted-foreground">
+          <Scale className="h-6 w-6" />
+        </div>
         <p className="text-sm font-semibold text-foreground">No entries yet</p>
         <p className="text-xs text-muted-foreground mt-1">Log your first weight to start tracking</p>
       </div>

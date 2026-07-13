@@ -12,15 +12,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { Exercise } from '@/types';
+import { cn } from '@/lib/utils';
+import type { Exercise, ExerciseType } from '@/types';
 
 interface AddExerciseModalProps {
   onClose: () => void;
   onSuccess: (exercise: Exercise) => void;
 }
 
+const TYPE_OPTIONS: { value: ExerciseType; label: string; hint: string }[] = [
+  { value: 'WEIGHTED', label: 'Weighted', hint: 'Barbell, dumbbell, machine' },
+  { value: 'BODYWEIGHT', label: 'Bodyweight', hint: 'Pull-ups, push-ups, dips' },
+];
+
 export default function AddExerciseModal({ onClose, onSuccess }: AddExerciseModalProps) {
   const [name, setName] = useState('');
+  const [type, setType] = useState<ExerciseType>('WEIGHTED');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,7 +42,7 @@ export default function AddExerciseModal({ onClose, onSuccess }: AddExerciseModa
       const res = await fetch('/api/exercises', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: name.trim(), type }),
       });
 
       if (!res.ok) {
@@ -76,6 +83,29 @@ export default function AddExerciseModal({ onClose, onSuccess }: AddExerciseModa
               autoFocus
               required
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Exercise type</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {TYPE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setType(opt.value)}
+                  aria-pressed={type === opt.value}
+                  className={cn(
+                    'rounded-md border p-3 text-left transition-colors',
+                    type === opt.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/40'
+                  )}
+                >
+                  <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{opt.hint}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

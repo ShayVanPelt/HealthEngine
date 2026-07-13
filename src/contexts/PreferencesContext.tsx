@@ -62,6 +62,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     const stored = readFromStorage();
     setPreferences(stored);
     applyTheme(stored.theme);
+    // Expose the client's timezone offset to Server Components (dashboard "today" stats)
+    document.cookie = `tz=${new Date().getTimezoneOffset()}; path=/; max-age=31536000; samesite=lax`;
   }, []);
 
   // Listen for OS theme changes when theme is 'system'

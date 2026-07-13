@@ -1,5 +1,6 @@
 'use client';
 
+import { Utensils } from 'lucide-react';
 import type { CalorieEntry } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,7 +27,9 @@ export default function CalorieList({
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl">
-        <div aria-hidden="true" className="text-3xl mb-2">🍽️</div>
+        <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-muted-foreground">
+          <Utensils className="h-6 w-6" />
+        </div>
         <p className="text-sm font-semibold text-foreground">{emptyTitle}</p>
         <p className="text-xs text-muted-foreground mt-1">{emptySubtitle}</p>
       </div>

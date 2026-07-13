@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { usePreferences } from '@/contexts/PreferencesContext';
-import { formatWeight } from '@/lib/units';
+import { formatWeightWithUnit, formatWeight } from '@/lib/units';
 
 interface DashboardStatsProps {
   caloriesToday: number;
@@ -15,6 +16,7 @@ interface DashboardStatsProps {
   lastWeekWorkouts: number;
   dailyCalorieGoal: number | null;
   weeklyWorkoutGoal: number | null;
+  targetWeightKg: number | null;
   daysSinceWorkout: number | null;
   dayOfWeek: number;
 }
@@ -29,6 +31,7 @@ export default function DashboardStats({
   lastWeekWorkouts,
   dailyCalorieGoal,
   weeklyWorkoutGoal,
+  targetWeightKg,
   daysSinceWorkout,
   dayOfWeek,
 }: DashboardStatsProps) {
@@ -39,25 +42,48 @@ export default function DashboardStats({
   const calorieDelta = caloriesToday - caloriesYesterday;
   const workoutDelta = weekWorkouts - lastWeekWorkouts;
 
-  // Build suggestions
-  const suggestions: string[] = [];
+  // Weight card subtitle — surface the target weight goal when set
+  let weightSubtitle: string;
+  if (latestWeightKg !== null && targetWeightKg !== null) {
+    const toGoKg = Math.abs(latestWeightKg - targetWeightKg);
+    weightSubtitle =
+      toGoKg < 0.05
+        ? `At your target of ${formatWeightWithUnit(targetWeightKg, bodyWeight)}`
+        : `${formatWeightWithUnit(toGoKg, bodyWeight)} to your ${formatWeightWithUnit(targetWeightKg, bodyWeight)} target`;
+  } else if (latestWeightKg !== null && latestWeightDate) {
+    weightSubtitle = new Date(latestWeightDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  } else {
+    weightSubtitle = 'No entries yet';
+  }
+
+  // Build suggestions with destinations so users can act on them directly
+  const suggestions: { text: string; href: string }[] = [];
   if (daysSinceWorkout !== null && daysSinceWorkout >= 3) {
-    suggestions.push(
-      `You haven't logged a workout in ${daysSinceWorkout} days — keep your streak going!`
-    );
+    suggestions.push({
+      text: `You haven't logged a workout in ${daysSinceWorkout} days — keep your streak going!`,
+      href: '/workouts/live',
+    });
   }
   if (caloriesToday === 0) {
-    suggestions.push("No calories logged today — don't forget to track your meals.");
+    suggestions.push({
+      text: "No calories logged today — don't forget to track your meals.",
+      href: '/calories',
+    });
   } else if (dailyCalorieGoal && caloriesToday < dailyCalorieGoal * 0.5) {
-    suggestions.push(
-      `You're at ${caloriesToday} ${calLabel} — less than half your daily goal.`
-    );
+    suggestions.push({
+      text: `You're at ${caloriesToday} ${calLabel} — less than half your daily goal.`,
+      href: '/calories',
+    });
   }
   if (weeklyWorkoutGoal && weekWorkouts < weeklyWorkoutGoal && dayOfWeek >= 5) {
     const remaining = weeklyWorkoutGoal - weekWorkouts;
-    suggestions.push(
-      `${remaining} more workout${remaining > 1 ? 's' : ''} to hit your weekly goal.`
-    );
+    suggestions.push({
+      text: `${remaining} more workout${remaining > 1 ? 's' : ''} to hit your weekly goal.`,
+      href: '/workouts/live',
+    });
   }
 
   return (
@@ -87,14 +113,7 @@ export default function DashboardStats({
             latestWeightKg !== null ? formatWeight(latestWeightKg, bodyWeight) : '--'
           }
           unit={latestWeightKg !== null ? bodyWeight : undefined}
-          subtitle={
-            latestWeightDate
-              ? new Date(latestWeightDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })
-              : 'No entries yet'
-          }
+          subtitle={weightSubtitle}
           animationDelay="180ms"
           trend={
             weightDeltaKg !== null
@@ -130,12 +149,16 @@ export default function DashboardStats({
         <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
           <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-2">
             {suggestions.map((s, i) => (
-              <div key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+              <Link
+                key={i}
+                href={s.href}
+                className="flex items-start gap-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <span className="mt-0.5 shrink-0 text-primary">
                   <Bell size={16} />
                 </span>
-                <span>{s}</span>
-              </div>
+                <span>{s.text}</span>
+              </Link>
             ))}
           </div>
         </div>

@@ -57,6 +57,7 @@ export default function EditWorkoutExerciseModal({
   const liftUnit = preferences.units.liftingWeight;
   const liftMax = weightMaxForUnit(liftUnit);
   const effortUnit = preferences.units.effort;
+  const isBodyweight = workoutExercise.exercise.type === 'BODYWEIGHT';
   const [sets, setSets] = useState<SetDraft[]>(() => workoutExercise.sets.map((s) => toDraft(s, liftUnit, effortUnit)));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -80,10 +81,23 @@ export default function EditWorkoutExerciseModal({
   };
 
   const handleSave = async () => {
+    if (sets.length === 0) {
+      setError('Add at least one set, or use "Delete exercise" to remove it entirely.');
+      return;
+    }
+
     // Validate ranges
     for (let i = 0; i < sets.length; i++) {
       const s = sets[i];
       const setNum = i + 1;
+      if (s.weight === '' && s.reps === '' && s.effort === '') {
+        setError(`Set ${setNum}: fill in at least one field`);
+        return;
+      }
+      if (isBodyweight && s.reps === '') {
+        setError(`Set ${setNum}: reps are required for bodyweight exercises`);
+        return;
+      }
       if (s.weight !== '') {
         const w = parseFloat(s.weight);
         if (isNaN(w) || w < 0 || w > liftMax) {
@@ -158,7 +172,14 @@ export default function EditWorkoutExerciseModal({
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="w-full sm:max-w-lg flex flex-col max-h-[90dvh] p-0 gap-0">
         <DialogHeader className="px-5 py-4 border-b border-border shrink-0">
-          <DialogTitle className="truncate">{workoutExercise.exercise.name}</DialogTitle>
+          <DialogTitle className="truncate">
+            {workoutExercise.exercise.name}
+            {isBodyweight && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-[9px] font-bold uppercase tracking-wider text-primary align-middle">
+                BW
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         {/* Scrollable body */}
@@ -166,7 +187,9 @@ export default function EditWorkoutExerciseModal({
           {/* Column headers */}
           <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.25rem] gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">#</span>
-            <span className="text-xs font-medium text-muted-foreground text-center">{liftUnit}</span>
+            <span className="text-xs font-medium text-muted-foreground text-center">
+              {isBodyweight ? `+${liftUnit}` : liftUnit}
+            </span>
             <span className="text-xs font-medium text-muted-foreground text-center">Reps</span>
             <span className="text-xs font-medium text-muted-foreground text-center">{effortUnit}</span>
             <span />
@@ -182,7 +205,7 @@ export default function EditWorkoutExerciseModal({
                 <span className="text-xs text-muted-foreground text-center">{idx + 1}</span>
                 <Input
                   type="number"
-                  placeholder="—"
+                  placeholder={isBodyweight ? 'BW' : '—'}
                   value={set.weight}
                   onChange={(e) => updateSet(idx, 'weight', e.target.value)}
                   min="0"

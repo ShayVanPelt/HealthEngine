@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/api-utils';
+import { validateSets, type SetInput } from '@/lib/workout-validation';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -48,12 +49,6 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   }
 }
 
-interface SetInput {
-  weight?: number | null;
-  reps?: number | null;
-  effort?: number | null;
-}
-
 // PATCH /api/workouts-v2/[id] — replace sets for one WorkoutExercise
 // Body: { workoutExerciseId: string, sets: SetInput[] }
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
@@ -73,6 +68,18 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         { error: 'workoutExerciseId and sets are required' },
         { status: 400 }
       );
+    }
+
+    if (sets.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one set is required — remove the exercise instead to delete it' },
+        { status: 400 }
+      );
+    }
+
+    const setError = validateSets(sets);
+    if (setError) {
+      return NextResponse.json({ error: setError }, { status: 400 });
     }
 
     const workout = await prisma.workout.findFirst({

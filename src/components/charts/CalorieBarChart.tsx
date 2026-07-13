@@ -12,6 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { useChartColors } from '@/hooks/useChartColors';
+import { useToast } from '@/hooks/useToast';
 import type { CalorieSummaryDay } from '@/app/api/calories/summary/route';
 
 interface Props {
@@ -35,7 +36,7 @@ function CustomTooltip({ active, payload, label, goal }: CustomTooltipProps) {
       <p className="text-muted-foreground">{label}</p>
       <p className="font-bold text-foreground">{val.toLocaleString()} Cal</p>
       {pct !== null && (
-        <p className={pct >= 100 ? 'text-green-500' : 'text-muted-foreground'}>
+        <p className={pct >= 100 ? 'text-success' : 'text-muted-foreground'}>
           {pct}% of daily goal
         </p>
       )}
@@ -48,6 +49,7 @@ export default function CalorieBarChart({ dailyGoal, refreshKey }: Props) {
   const [data, setData] = useState<CalorieSummaryDay[]>([]);
   const [loading, setLoading] = useState(true);
   const colors = useChartColors();
+  const { toast } = useToast();
 
   const fetch30Days = useCallback(async () => {
     setLoading(true);
@@ -57,13 +59,15 @@ export default function CalorieBarChart({ dailyGoal, refreshKey }: Props) {
       if (res.ok) {
         const json = await res.json();
         setData(json.data ?? []);
+      } else {
+        toast('Failed to load calorie history', 'error');
       }
     } catch {
-      // fail silently — chart is non-critical
+      toast('Failed to load calorie history', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { fetch30Days(); }, [fetch30Days, refreshKey]);

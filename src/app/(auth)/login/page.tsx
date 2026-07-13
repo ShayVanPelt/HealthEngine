@@ -10,13 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirectTo = params.get('redirect') ?? '/dashboard';
+  // Only allow same-origin relative paths to prevent open redirects (e.g. //evil.com)
+  const rawRedirect = params.get('redirect') ?? '';
+  const redirectTo = /^\/[a-zA-Z0-9/_-]*$/.test(rawRedirect) ? rawRedirect : '/dashboard';
 
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [devMode, setDevMode] = useState(false);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +36,7 @@ function LoginForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to send code');
 
+      setDevMode(data.devMode === true);
       setStep('code');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -70,7 +74,7 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl sm:text-2xl">
+            <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight leading-none">
               Health<span className="text-primary">Engine</span>
             </CardTitle>
             <CardDescription>Track your fitness journey</CardDescription>
@@ -104,9 +108,11 @@ function LoginForm() {
                   <p className="text-foreground">
                     A 6-digit code was sent to <strong>{email}</strong>.
                   </p>
-                  <p className="text-muted-foreground text-xs mt-1">
-                    In development, the code is logged to the server console.
-                  </p>
+                  {devMode && (
+                    <p className="text-muted-foreground text-xs mt-1">
+                      In development, the code is logged to the server console.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">

@@ -1,13 +1,16 @@
 'use client';
 
-import type { ExerciseHistoryEntry } from '@/types';
+import { TrendingUp } from 'lucide-react';
+import type { ExerciseHistoryEntry, ExerciseType } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import LoadingDots from '@/components/ui/LoadingDots';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { formatWeight, convertWeight, convertEffortForDisplay } from '@/lib/units';
 
 interface ExerciseHistoryViewProps {
   history: ExerciseHistoryEntry[];
   loading: boolean;
+  exerciseType?: ExerciseType;
 }
 
 function formatDisplayDate(dateStr: string) {
@@ -28,6 +31,11 @@ function getMaxWeight(entry: ExerciseHistoryEntry): number | null {
   return weights.length > 0 ? Math.max(...weights) : null;
 }
 
+function getMaxReps(entry: ExerciseHistoryEntry): number | null {
+  const reps = entry.sets.filter((s) => s.reps != null).map((s) => s.reps as number);
+  return reps.length > 0 ? Math.max(...reps) : null;
+}
+
 function getTotalVolume(entry: ExerciseHistoryEntry): number {
   return entry.sets.reduce((acc, s) => {
     if (s.weight != null && s.reps != null) return acc + s.weight * s.reps;
@@ -35,25 +43,20 @@ function getTotalVolume(entry: ExerciseHistoryEntry): number {
   }, 0);
 }
 
-export default function ExerciseHistoryView({ history, loading }: ExerciseHistoryViewProps) {
+function getTotalReps(entry: ExerciseHistoryEntry): number {
+  return entry.sets.reduce((acc, s) => acc + (s.reps ?? 0), 0);
+}
+
+export default function ExerciseHistoryView({ history, loading, exerciseType = 'WEIGHTED' }: ExerciseHistoryViewProps) {
   const { preferences } = usePreferences();
   const unit = preferences.units.liftingWeight;
   const effortUnit = preferences.units.effort;
+  const isBodyweight = exerciseType === 'BODYWEIGHT';
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div role="status" aria-label="Loading exercise history" className="flex gap-1">
-          <span className="sr-only">Loading exercise history…</span>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              aria-hidden="true"
-              className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            />
-          ))}
-        </div>
+        <LoadingDots label="Loading exercise history" />
       </div>
     );
   }
@@ -61,8 +64,8 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
   if (history.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-2xl">
-          📈
+        <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-muted-foreground">
+          <TrendingUp className="h-6 w-6" />
         </div>
         <p className="text-sm text-muted-foreground">No history yet</p>
         <p className="text-xs text-muted-foreground/60 mt-1">
@@ -74,12 +77,27 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
 
   return (
     <div className="space-y-3">
-      {/* Summary row */}
+      {/* Summary row — all-time PR across every session */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground pb-1">
         <span>{history.length} {history.length === 1 ? 'session' : 'sessions'}</span>
         {(() => {
-          const maxW = getMaxWeight(history[0]);
-          if (!maxW) return null;
+          if (isBodyweight) {
+            const maxReps = history.reduce<number | null>((best, e) => {
+              const r = getMaxReps(e);
+              return r != null && (best == null || r > best) ? r : best;
+            }, null);
+            if (maxReps == null) return null;
+            return (
+              <span>
+                Best: <span className="font-semibold text-primary">{maxReps} reps</span>
+              </span>
+            );
+          }
+          const maxW = history.reduce<number | null>((best, e) => {
+            const w = getMaxWeight(e);
+            return w != null && (best == null || w > best) ? w : best;
+          }, null);
+          if (maxW == null) return null;
           return (
             <span>
               Best: <span className="font-semibold text-primary">{formatWeight(maxW, unit)}{unit}</span>
@@ -89,11 +107,13 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
       </div>
 
       {history.map((entry, idx) => {
-        const maxWeight = getMaxWeight(entry);
-        const prevMaxWeight = idx < history.length - 1 ? getMaxWeight(history[idx + 1]) : null;
-        const delta =
-          maxWeight != null && prevMaxWeight != null ? maxWeight - prevMaxWeight : null;
+        const prevEntry = idx < history.length - 1 ? history[idx + 1] : null;
+        // Progress badge compares reps for bodyweight, max weight for weighted
+        const current = isBodyweight ? getMaxReps(entry) : getMaxWeight(entry);
+        const previous = prevEntry ? (isBodyweight ? getMaxReps(prevEntry) : getMaxWeight(prevEntry)) : null;
+        const delta = current != null && previous != null ? current - previous : null;
         const volume = getTotalVolume(entry);
+        const totalReps = getTotalReps(entry);
 
         return (
           <div
@@ -106,24 +126,35 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
                 {formatDisplayDate(entry.workout.date)}
               </span>
               <div className="flex items-center gap-2">
-                {volume > 0 && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {Math.round(convertWeight(volume, unit)).toLocaleString()}{unit} vol
-                  </span>
+                {isBodyweight ? (
+                  totalReps > 0 && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {totalReps.toLocaleString()} reps
+                    </span>
+                  )
+                ) : (
+                  volume > 0 && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {Math.round(convertWeight(volume, unit)).toLocaleString()}{unit} vol
+                    </span>
+                  )
                 )}
                 {delta !== null && delta !== 0 && (
                   <Badge
                     variant="secondary"
                     className={
                       delta > 0
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-100'
-                        : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100'
+                        ? 'bg-success/15 text-success hover:bg-success/15'
+                        : 'bg-destructive/10 text-destructive hover:bg-destructive/10'
                     }
                   >
-                    {delta > 0 ? '+' : ''}{formatWeight(Math.abs(delta), unit)}{unit}
+                    {delta > 0 ? '+' : ''}
+                    {isBodyweight
+                      ? `${Math.abs(delta)} ${Math.abs(delta) === 1 ? 'rep' : 'reps'}`
+                      : `${formatWeight(Math.abs(delta), unit)}${unit}`}
                   </Badge>
                 )}
-                {idx === 0 && prevMaxWeight === null && maxWeight !== null && (
+                {idx === 0 && previous === null && current !== null && (
                   <span className="text-xs text-muted-foreground italic">First session</span>
                 )}
               </div>
@@ -144,7 +175,13 @@ export default function ExerciseHistoryView({ history, loading }: ExerciseHistor
                 >
                   <span className="text-sm text-muted-foreground">{i + 1}</span>
                   <span className="text-sm text-right tabular-nums">
-                    {set.weight != null ? `${formatWeight(set.weight, unit)}${unit}` : '—'}
+                    {isBodyweight
+                      ? set.weight != null && set.weight > 0
+                        ? `BW+${formatWeight(set.weight, unit)}${unit}`
+                        : 'BW'
+                      : set.weight != null
+                        ? `${formatWeight(set.weight, unit)}${unit}`
+                        : '—'}
                   </span>
                   <span className="text-sm text-right tabular-nums">
                     {set.reps != null ? set.reps : '—'}

@@ -25,10 +25,13 @@ export interface WeightEntry {
 
 // — Upgraded workout system —
 
+export type ExerciseType = 'WEIGHTED' | 'BODYWEIGHT' | 'TIMED';
+
 export interface Exercise {
   id: string;
   userId: string;
   name: string;
+  type: ExerciseType;
   createdAt: string;
 }
 
@@ -38,6 +41,7 @@ export interface WorkoutSet {
   weight: number | null;
   reps: number | null;
   effort: number | null;
+  completedAt: string | null;
   createdAt: string;
 }
 
@@ -49,10 +53,15 @@ export interface WorkoutExercise {
   sets: WorkoutSet[];
 }
 
+export type WorkoutStatus = 'IN_PROGRESS' | 'COMPLETED';
+
 export interface Workout {
   id: string;
   userId: string;
   date: string;
+  status: WorkoutStatus;
+  startedAt: string | null;
+  completedAt: string | null;
   createdAt: string;
   workoutExercises: WorkoutExercise[];
 }

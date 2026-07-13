@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { Pencil, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +22,7 @@ import type { Exercise, Workout, ExerciseHistoryEntry } from '@/types';
 
 const AddExerciseModal = dynamic(() => import('@/components/workouts/AddExerciseModal'), { ssr: false });
 const AddWorkoutModal = dynamic(() => import('@/components/workouts/AddWorkoutModal'), { ssr: false });
+const EditExerciseModal = dynamic(() => import('@/components/workouts/EditExerciseModal'), { ssr: false });
 
 function getTodayString() {
   const d = new Date();
@@ -47,6 +50,10 @@ export default function WorkoutsPage() {
   // Modals
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [showAddWorkout, setShowAddWorkout] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+
+  // Live session resume banner
+  const [hasLiveWorkout, setHasLiveWorkout] = useState(false);
 
   // — Fetchers —
 
@@ -100,15 +107,25 @@ export default function WorkoutsPage() {
       if (res.ok) {
         const { data } = await res.json();
         setExerciseHistory(data ?? []);
+      } else {
+        toast('Failed to load exercise history', 'error');
       }
+    } catch {
+      toast('Failed to load exercise history', 'error');
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   // — Effects —
 
   useEffect(() => { fetchExercises(); }, [fetchExercises]);
+  useEffect(() => {
+    fetch('/api/workouts-v2/live')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setHasLiveWorkout(Boolean(d?.data)))
+      .catch(() => {});
+  }, []);
   useEffect(() => { fetchWorkoutDates(calYear, calMonth); }, [calYear, calMonth, fetchWorkoutDates]);
   useEffect(() => { fetchDayWorkouts(selectedDate); }, [selectedDate, fetchDayWorkouts]);
   useEffect(() => {
@@ -134,6 +151,26 @@ export default function WorkoutsPage() {
     );
   };
 
+  const handleExerciseUpdated = (exercise: Exercise) => {
+    setExercises((prev) =>
+      prev
+        .map((item) => (item.id === exercise.id ? exercise : item))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    );
+    toast('Exercise updated', 'success');
+  };
+
+  const handleExerciseDeleted = (exerciseId: string) => {
+    setExercises((prev) => prev.filter((exercise) => exercise.id !== exerciseId));
+    if (selectedExerciseId === exerciseId) {
+      setSelectedExerciseId('');
+      setExerciseHistory([]);
+    }
+    fetchDayWorkouts(selectedDate);
+    fetchWorkoutDates(calYear, calMonth);
+    toast('Exercise and its history deleted', 'info');
+  };
+
   return (
     <div>
       {/* Page header */}
@@ -142,28 +179,48 @@ export default function WorkoutsPage() {
         <p className="text-muted-foreground mt-3 text-sm">Track your training, set by set.</p>
       </div>
 
+      {/* Resume banner for an in-progress live session */}
+      {hasLiveWorkout && (
+        <Link
+          href="/workouts/live"
+          className="flex items-center justify-between gap-3 mb-4 rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 hover:bg-primary/10 transition-colors animate-scale-in"
+        >
+          <span className="text-sm font-semibold text-foreground">
+            You have a workout in progress
+          </span>
+          <span className="text-sm font-bold text-primary shrink-0">Resume →</span>
+        </Link>
+      )}
+
       {/* Sticky action bar */}
       <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border mb-6">
         <div className="flex items-center gap-2">
+          <Button size="sm" asChild className="h-11 sm:h-9 gap-1.5">
+            <Link href="/workouts/live">
+              <Play className="h-3.5 w-3.5" aria-hidden />
+              <span>Start Workout</span>
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddWorkout(true)}
+            className="h-11 sm:h-9 gap-1.5"
+          >
+            <span className="text-base leading-none">+</span>
+            <span>Log Past</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowAddExercise(true)}
-            className="h-9 gap-1.5"
+            className="h-11 sm:h-9 gap-1.5"
           >
             <span className="text-base leading-none">+</span>
-            <span>Add Exercise</span>
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setShowAddWorkout(true)}
-            className="h-9 gap-1.5"
-          >
-            <span className="text-base leading-none">+</span>
-            <span>Add Workout</span>
+            <span>Exercise</span>
           </Button>
           {exercises.length > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground">
+            <span className="ml-auto text-xs text-muted-foreground hidden sm:inline">
               {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
             </span>
           )}
@@ -230,18 +287,33 @@ export default function WorkoutsPage() {
                   </button>
                 </div>
               ) : (
-                <Select value={selectedExerciseId} onValueChange={setSelectedExerciseId}>
-                  <SelectTrigger className="w-full sm:max-w-xs">
-                    <SelectValue placeholder="Choose an exercise..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {exercises.map((ex) => (
-                      <SelectItem key={ex.id} value={ex.id}>
-                        {ex.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 sm:max-w-sm">
+                  <Select value={selectedExerciseId} onValueChange={setSelectedExerciseId}>
+                    <SelectTrigger className="min-w-0 flex-1">
+                      <SelectValue placeholder="Choose an exercise..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {exercises.map((ex) => (
+                        <SelectItem key={ex.id} value={ex.id}>
+                          {ex.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    disabled={!selectedExerciseId}
+                    onClick={() => {
+                      const selected = exercises.find((exercise) => exercise.id === selectedExerciseId);
+                      if (selected) setEditingExercise(selected);
+                    }}
+                    aria-label="Edit selected exercise"
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden />
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -250,6 +322,7 @@ export default function WorkoutsPage() {
               <ExerciseHistoryView
                 history={exerciseHistory}
                 loading={historyLoading}
+                exerciseType={exercises.find((e) => e.id === selectedExerciseId)?.type}
               />
             )}
           </div>
@@ -269,6 +342,15 @@ export default function WorkoutsPage() {
           exercises={exercises}
           onClose={() => setShowAddWorkout(false)}
           onSuccess={handleWorkoutAdded}
+        />
+      )}
+
+      {editingExercise && (
+        <EditExerciseModal
+          exercise={editingExercise}
+          onClose={() => setEditingExercise(null)}
+          onUpdated={handleExerciseUpdated}
+          onDeleted={handleExerciseDeleted}
         />
       )}
     </div>

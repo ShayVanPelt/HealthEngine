@@ -60,19 +60,34 @@ model WeightEntry {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum ExerciseType {
+  WEIGHTED
+  BODYWEIGHT
+  TIMED // reserved for future duration-based exercises
+}
+
 model Exercise {
   id               String            @id @default(cuid())
   userId           String
   name             String
+  type             ExerciseType      @default(WEIGHTED)
   createdAt        DateTime          @default(now())
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutExercises WorkoutExercise[]
+}
+
+enum WorkoutStatus {
+  IN_PROGRESS
+  COMPLETED
 }
 
 model Workout {
   id               String            @id @default(cuid())
   userId           String
   date             DateTime
+  status           WorkoutStatus     @default(COMPLETED)
+  startedAt        DateTime?
+  completedAt      DateTime?
   createdAt        DateTime          @default(now())
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutExercises WorkoutExercise[]
@@ -93,6 +108,7 @@ model WorkoutSet {
   weight            Float?
   reps              Int?
   effort            Int?
+  completedAt       DateTime? // set in live Workout Mode when the user marks the set done
   createdAt         DateTime        @default(now())
   workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
 }

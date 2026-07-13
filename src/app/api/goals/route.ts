@@ -17,6 +17,25 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   const { dailyCalories, weeklyWorkouts, targetWeight } = body;
 
+  if (dailyCalories != null) {
+    const v = Number(dailyCalories);
+    if (!Number.isInteger(v) || v < 0 || v > 50000) {
+      return Response.json({ error: 'Daily calories must be a whole number between 0 and 50,000' }, { status: 400 });
+    }
+  }
+  if (weeklyWorkouts != null) {
+    const v = Number(weeklyWorkouts);
+    if (!Number.isInteger(v) || v < 0 || v > 14) {
+      return Response.json({ error: 'Weekly workouts must be a whole number between 0 and 14' }, { status: 400 });
+    }
+  }
+  if (targetWeight != null) {
+    const v = Number(targetWeight);
+    if (!Number.isFinite(v) || v <= 0 || v > 500) {
+      return Response.json({ error: 'Target weight must be between 0 and 500 kg' }, { status: 400 });
+    }
+  }
+
   const goal = await prisma.userGoal.upsert({
     where: { userId: auth.session.userId },
     update: {

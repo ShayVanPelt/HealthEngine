@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { Dumbbell, Flame, Scale } from 'lucide-react';
 import { getSession } from '@/lib/session';
@@ -11,7 +12,7 @@ import { cn } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 const QUICK_ACTIONS = [
-  { href: '/workouts', label: 'Log a Workout', description: 'Track sets, reps & RPE', icon: Dumbbell },
+  { href: '/workouts/live', label: 'Start a Workout', description: 'Live session with rest timer', icon: Dumbbell },
   { href: '/calories', label: 'Log Calories', description: 'Record meals & macros', icon: Flame },
   { href: '/weight', label: 'Log Weight', description: 'Monitor your progress', icon: Scale },
 ];
@@ -22,19 +23,28 @@ export default async function DashboardPage() {
 
   const now = new Date();
 
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
+  // Client timezone offset (minutes, from getTimezoneOffset) — set as a cookie by
+  // PreferencesProvider so "today" matches the user's wall clock, not server UTC.
+  const cookieStore = await cookies();
+  const tzOffset = Number(cookieStore.get('tz')?.value ?? '0') || 0;
+  const tzMs = tzOffset * 60 * 1000;
 
-  const yesterdayStart = new Date(todayStart);
-  yesterdayStart.setDate(todayStart.getDate() - 1);
-  const yesterdayEnd = new Date(todayStart);
+  // Shifted clock whose UTC getters return the user's local wall-clock date
+  const localNow = new Date(now.getTime() - tzMs);
+  const y = localNow.getUTCFullYear();
+  const m = localNow.getUTCMonth();
+  const d = localNow.getUTCDate();
 
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
-  weekStart.setHours(0, 0, 0, 0);
+  // Calorie boundaries: real UTC instants of the user's local midnight
+  const todayStart = new Date(Date.UTC(y, m, d) + tzMs);
+  const yesterdayStart = new Date(Date.UTC(y, m, d - 1) + tzMs);
+  const yesterdayEnd = todayStart;
 
-  const lastWeekStart = new Date(weekStart);
-  lastWeekStart.setDate(weekStart.getDate() - 7);
+  // Workout dates are stored as UTC midnight of the picked calendar day,
+  // so week boundaries use the same date-only encoding (no tz shift).
+  const dow = localNow.getUTCDay();
+  const weekStart = new Date(Date.UTC(y, m, d - dow));
+  const lastWeekStart = new Date(Date.UTC(y, m, d - dow - 7));
 
   const [
     todayCalories,
@@ -106,6 +116,7 @@ export default async function DashboardPage() {
         lastWeekWorkouts={lastWeekWorkouts}
         dailyCalorieGoal={goal?.dailyCalories ?? null}
         weeklyWorkoutGoal={goal?.weeklyWorkouts ?? null}
+        targetWeightKg={goal?.targetWeight ?? null}
         daysSinceWorkout={daysSinceWorkout}
         dayOfWeek={now.getDay()}
       />

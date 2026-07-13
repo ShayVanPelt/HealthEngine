@@ -146,9 +146,18 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
     // Validate ranges
     for (const ex of drafts) {
       const exercise = exercises.find((e) => e.id === ex.exerciseId);
+      const isBodyweight = exercise?.type === 'BODYWEIGHT';
       for (let i = 0; i < ex.sets.length; i++) {
         const s = ex.sets[i];
         const setNum = i + 1;
+        if (s.weight === '' && s.reps === '' && s.effort === '') {
+          setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: fill in at least one field`);
+          return;
+        }
+        if (isBodyweight && s.reps === '') {
+          setError(`${exercise?.name ?? 'Exercise'} set ${setNum}: reps are required for bodyweight exercises`);
+          return;
+        }
         if (s.weight !== '') {
           const w = parseFloat(s.weight);
           if (isNaN(w) || w < 0 || w > liftMax) {
@@ -273,6 +282,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
           {/* Exercise entries */}
           {drafts.map((ex, exIdx) => {
             const exercise = exercises.find((e) => e.id === ex.exerciseId);
+            const isBodyweight = exercise?.type === 'BODYWEIGHT';
             return (
               <div
                 key={exIdx}
@@ -280,7 +290,14 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
               >
                 {/* Exercise header row */}
                 <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-muted">
-                  <span className="font-medium text-sm truncate min-w-0">{exercise?.name}</span>
+                  <span className="font-medium text-sm truncate min-w-0">
+                    {exercise?.name}
+                    {isBodyweight && (
+                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-[9px] font-bold uppercase tracking-wider text-primary align-middle">
+                        BW
+                      </span>
+                    )}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -292,10 +309,12 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                   </Button>
                 </div>
 
-                {/* Column headers */}
+                {/* Column headers — bodyweight exercises track added load (vest/belt), reps primary */}
                 <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.25rem] gap-1.5 px-4 pt-3 pb-1">
                   <span className="text-xs font-medium text-muted-foreground">#</span>
-                  <span className="text-xs font-medium text-muted-foreground text-center">{liftUnit}</span>
+                  <span className="text-xs font-medium text-muted-foreground text-center">
+                    {isBodyweight ? `+${liftUnit}` : liftUnit}
+                  </span>
                   <span className="text-xs font-medium text-muted-foreground text-center">Reps</span>
                   <span className="text-xs font-medium text-muted-foreground text-center">{effortUnit}</span>
                   <span />
@@ -311,7 +330,7 @@ export default function AddWorkoutModal({ exercises, onClose, onSuccess }: AddWo
                       <span className="text-xs text-muted-foreground text-center">{setIdx + 1}</span>
                       <Input
                         type="number"
-                        placeholder="—"
+                        placeholder={isBodyweight ? 'BW' : '—'}
                         value={set.weight}
                         onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
                         min="0"

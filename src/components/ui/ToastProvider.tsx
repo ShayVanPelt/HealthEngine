@@ -56,7 +56,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
             )}
           >
             {t.variant === 'success' && (
-              <span className="shrink-0 w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 text-[10px] font-black">✓</span>
+              <span className="shrink-0 w-4 h-4 rounded-full bg-success/20 flex items-center justify-center text-success text-[10px] font-black">✓</span>
             )}
             {t.variant === 'error' && (
               <span className="shrink-0 w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center text-destructive text-[10px] font-black">✕</span>

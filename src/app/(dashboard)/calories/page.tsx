@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import StatCard from '@/components/ui/StatCard';
+import LoadingDots from '@/components/ui/LoadingDots';
 import CalendarView from '@/components/workouts/CalendarView';
 import { useToast } from '@/hooks/useToast';
 import type { CalorieEntry } from '@/types';
@@ -148,10 +149,17 @@ export default function CaloriesPage() {
         <div>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold">Log Entry</CardTitle>
+              <CardTitle className="text-base font-bold">
+                Log Entry
+                {!isToday && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    for {formatDisplayDate(selectedDate)}
+                  </span>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <CalorieForm onSuccess={handleSuccess} />
+              <CalorieForm onSuccess={handleSuccess} selectedDate={selectedDate} />
             </CardContent>
           </Card>
         </div>
@@ -199,14 +207,8 @@ export default function CaloriesPage() {
             </div>
 
             {loading ? (
-              <div className="flex items-center gap-1 py-8">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
-                    style={{ animationDelay: `${i * 0.15}s` }}
-                  />
-                ))}
+              <div className="py-8">
+                <LoadingDots label="Loading entries" />
               </div>
             ) : (
               <CalorieList

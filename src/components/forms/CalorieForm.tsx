@@ -9,9 +9,11 @@ import { macroInputToG } from '@/lib/units';
 
 interface CalorieFormProps {
   onSuccess: () => void;
+  /** YYYY-MM-DD — the calendar day the entry should be logged to (defaults to today server-side) */
+  selectedDate?: string;
 }
 
-export default function CalorieForm({ onSuccess }: CalorieFormProps) {
+export default function CalorieForm({ onSuccess, selectedDate }: CalorieFormProps) {
   const { preferences } = usePreferences();
   const macroUnit = preferences.units.macros;
   const [loading, setLoading] = useState(false);
@@ -58,6 +60,8 @@ export default function CalorieForm({ onSuccess }: CalorieFormProps) {
           protein: form.protein ? macroInputToG(parseFloat(form.protein), macroUnit) : null,
           carbs: form.carbs ? macroInputToG(parseFloat(form.carbs), macroUnit) : null,
           fat: form.fat ? macroInputToG(parseFloat(form.fat), macroUnit) : null,
+          date: selectedDate ?? null,
+          tz: new Date().getTimezoneOffset(),
         }),
       });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/api-utils';
+import { validateSets, type SetInput } from '@/lib/workout-validation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       const workouts = await prisma.workout.findMany({
         where: {
           userId: auth.session.userId,
+          status: 'COMPLETED',
           date: { gte: startOfMonth, lt: startOfNextMonth },
         },
         select: { date: true },
@@ -39,6 +41,7 @@ export async function GET(request: NextRequest) {
       const workouts = await prisma.workout.findMany({
         where: {
           userId: auth.session.userId,
+          status: 'COMPLETED',
           date: { gte: dayStart, lte: dayEnd },
         },
         include: {
@@ -63,12 +66,6 @@ export async function GET(request: NextRequest) {
     console.error('[GET /api/workouts-v2]', error);
     return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 });
   }
-}
-
-interface SetInput {
-  weight?: number | null;
-  reps?: number | null;
-  effort?: number | null;
 }
 
 interface ExerciseInput {
@@ -102,16 +99,9 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(ex.sets) || ex.sets.length === 0) {
         return NextResponse.json({ error: 'Each exercise must have at least one set' }, { status: 400 });
       }
-      for (const s of ex.sets) {
-        if (s.weight !== null && s.weight !== undefined && (typeof s.weight !== 'number' || s.weight < 0 || s.weight > 1000)) {
-          return NextResponse.json({ error: 'Set weight must be between 0 and 1,000 kg' }, { status: 400 });
-        }
-        if (s.reps !== null && s.reps !== undefined && (typeof s.reps !== 'number' || s.reps < 1 || s.reps > 50)) {
-          return NextResponse.json({ error: 'Set reps must be between 1 and 50' }, { status: 400 });
-        }
-        if (s.effort !== null && s.effort !== undefined && (typeof s.effort !== 'number' || s.effort < 1 || s.effort > 10)) {
-          return NextResponse.json({ error: 'Set effort (RPE) must be between 1 and 10' }, { status: 400 });
-        }
+      const setError = validateSets(ex.sets);
+      if (setError) {
+        return NextResponse.json({ error: setError }, { status: 400 });
       }
     }
 
@@ -124,31 +114,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'One or more exercises not found' }, { status: 400 });
     }
 
+    const exercisesCreate = exercises.map((ex) => ({
+      exerciseId: ex.exerciseId,
+      sets: {
+        create: (ex.sets ?? []).map((s) => ({
+          weight: s.weight ?? null,
+          reps: s.reps ?? null,
+          effort: s.effort ?? null,
+        })),
+      },
+    }));
+
+    const workoutInclude = {
+      workoutExercises: {
+        include: {
+          exercise: true,
+          sets: { orderBy: { createdAt: 'asc' as const } },
+        },
+      },
+    };
+
+    // If a completed workout already exists on this date, append the new exercises to it
+    // instead of creating a duplicate session for the same day.
+    const existing = await prisma.workout.findFirst({
+      where: {
+        userId: auth.session.userId,
+        status: 'COMPLETED',
+        date: {
+          gte: new Date(`${date}T00:00:00.000Z`),
+          lte: new Date(`${date}T23:59:59.999Z`),
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (existing) {
+      const workout = await prisma.workout.update({
+        where: { id: existing.id },
+        data: { workoutExercises: { create: exercisesCreate } },
+        include: workoutInclude,
+      });
+      return NextResponse.json({ success: true, data: workout }, { status: 200 });
+    }
+
     const workout = await prisma.workout.create({
       data: {
         userId: auth.session.userId,
         date: new Date(`${date}T00:00:00.000Z`),
-        workoutExercises: {
-          create: exercises.map((ex) => ({
-            exerciseId: ex.exerciseId,
-            sets: {
-              create: (ex.sets ?? []).map((s) => ({
-                weight: s.weight ?? null,
-                reps: s.reps ?? null,
-                effort: s.effort ?? null,
-              })),
-            },
-          })),
-        },
+        workoutExercises: { create: exercisesCreate },
       },
-      include: {
-        workoutExercises: {
-          include: {
-            exercise: true,
-            sets: { orderBy: { createdAt: 'asc' } },
-          },
-        },
-      },
+      include: workoutInclude,
     });
 
     return NextResponse.json({ success: true, data: workout }, { status: 201 });

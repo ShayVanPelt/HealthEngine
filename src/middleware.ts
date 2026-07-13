@@ -3,7 +3,7 @@ import { getIronSession } from 'iron-session';
 import type { SessionData } from '@/lib/session';
 import { sessionOptions } from '@/lib/session';
 
-const PROTECTED = ['/dashboard', '/workouts', '/calories', '/weight'];
+const PROTECTED = ['/dashboard', '/workouts', '/calories', '/weight', '/settings'];
 const AUTH_ONLY = ['/login'];
 
 export async function middleware(request: NextRequest) {

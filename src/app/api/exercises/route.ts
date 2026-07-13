@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const auth = await requireAuth();
     if (!auth.ok) return auth.response;
 
-    const { name } = await request.json();
+    const { name, type } = await request.json();
 
     if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'name (string) is required' }, { status: 400 });
@@ -32,6 +32,11 @@ export async function POST(request: NextRequest) {
 
     if (name.trim().length > 100) {
       return NextResponse.json({ error: 'Exercise name must be 100 characters or fewer' }, { status: 400 });
+    }
+
+    const VALID_TYPES = ['WEIGHTED', 'BODYWEIGHT'] as const;
+    if (type !== undefined && !VALID_TYPES.includes(type)) {
+      return NextResponse.json({ error: 'type must be WEIGHTED or BODYWEIGHT' }, { status: 400 });
     }
 
     const existing = await prisma.exercise.findFirst({
@@ -45,6 +50,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: auth.session.userId,
         name: name.trim(),
+        type: type ?? 'WEIGHTED',
       },
     });
 

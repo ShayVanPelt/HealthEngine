@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { Dumbbell, Pencil } from 'lucide-react';
 import type { Workout, WorkoutExercise } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import LoadingDots from '@/components/ui/LoadingDots';
 import EditWorkoutExerciseModal from './EditWorkoutExerciseModal';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { formatWeight, convertWeight, convertEffortForDisplay } from '@/lib/units';
@@ -32,13 +34,8 @@ function calcVolume(sets: WorkoutExercise['sets']): number {
   }, 0);
 }
 
-function PencilIcon() {
-  return (
-    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
+function calcTotalReps(sets: WorkoutExercise['sets']): number {
+  return sets.reduce((acc, s) => acc + (s.reps ?? 0), 0);
 }
 
 export default function WorkoutDayView({ date, workouts, loading, onRefresh }: WorkoutDayViewProps) {
@@ -66,17 +63,7 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div role="status" aria-label="Loading workouts" className="flex gap-1">
-          <span className="sr-only">Loading workouts…</span>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              aria-hidden="true"
-              className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            />
-          ))}
-        </div>
+        <LoadingDots label="Loading workouts" />
       </div>
     );
   }
@@ -84,12 +71,12 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
   if (workouts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-2xl">
-          🏋️
+        <div aria-hidden="true" className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 text-muted-foreground">
+          <Dumbbell className="h-6 w-6" />
         </div>
         <p className="text-sm font-semibold text-foreground">No workouts on this day</p>
         <p className="text-xs text-muted-foreground/70 mt-1">
-          Click &ldquo;+ Add Workout&rdquo; to log one
+          Start a workout or log a past one
         </p>
       </div>
     );
@@ -120,7 +107,9 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
         </div>
 
         {exercises.map(({ we, workoutId }, cardIdx) => {
+          const isBodyweight = we.exercise.type === 'BODYWEIGHT';
           const volume = calcVolume(we.sets);
+          const totalReps = calcTotalReps(we.sets);
           return (
             <Card
               key={we.id}
@@ -129,11 +118,26 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
             >
               <CardHeader className="px-4 py-3 bg-primary/8 flex-row items-center justify-between space-y-0 gap-2 border-b border-border">
                 <div className="min-w-0">
-                  <h3 className="font-bold text-base truncate">{we.exercise.name}</h3>
-                  {volume > 0 && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {Math.round(convertWeight(volume, liftUnit)).toLocaleString()} {liftUnit} total volume
-                    </p>
+                  <h3 className="font-bold text-base truncate">
+                    {we.exercise.name}
+                    {isBodyweight && (
+                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-[9px] font-bold uppercase tracking-wider text-primary align-middle">
+                        BW
+                      </span>
+                    )}
+                  </h3>
+                  {isBodyweight ? (
+                    totalReps > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {totalReps.toLocaleString()} total reps
+                      </p>
+                    )
+                  ) : (
+                    volume > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {Math.round(convertWeight(volume, liftUnit)).toLocaleString()} {liftUnit} total volume
+                      </p>
+                    )
                   )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -142,10 +146,10 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
                   </span>
                   <button
                     onClick={() => setEditing({ workoutId, workoutExercise: we })}
-                    className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    className="w-9 h-9 -m-1 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                     aria-label={`Edit ${we.exercise.name}`}
                   >
-                    <PencilIcon />
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
                   </button>
                 </div>
               </CardHeader>
@@ -165,7 +169,13 @@ export default function WorkoutDayView({ date, workouts, loading, onRefresh }: W
                     >
                       <span className="text-sm font-bold text-muted-foreground">{i + 1}</span>
                       <span className="text-sm font-semibold text-right tabular-nums">
-                        {set.weight != null ? `${formatWeight(set.weight, liftUnit)}${liftUnit}` : '—'}
+                        {isBodyweight
+                          ? set.weight != null && set.weight > 0
+                            ? `BW+${formatWeight(set.weight, liftUnit)}${liftUnit}`
+                            : 'BW'
+                          : set.weight != null
+                            ? `${formatWeight(set.weight, liftUnit)}${liftUnit}`
+                            : '—'}
                       </span>
                       <span className="text-sm font-semibold text-right tabular-nums">
                         {set.reps != null ? set.reps : '—'}

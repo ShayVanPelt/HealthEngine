@@ -6,6 +6,7 @@ import WeightList from '@/components/lists/WeightList';
 import WeightChart from '@/components/charts/WeightChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/components/ui/StatCard';
+import LoadingDots from '@/components/ui/LoadingDots';
 import type { WeightEntry } from '@/types';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { formatWeight } from '@/lib/units';
@@ -37,6 +38,11 @@ export default function WeightPage() {
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
+
+  const handleLogged = useCallback(() => {
+    fetchEntries();
+    toast('Weight logged!', 'success');
+  }, [fetchEntries, toast]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -113,16 +119,16 @@ export default function WeightPage() {
         <div>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Log Weight</CardTitle>
+              <CardTitle className="text-base font-bold">Log Weight</CardTitle>
             </CardHeader>
             <CardContent>
-              <WeightForm onSuccess={fetchEntries} />
+              <WeightForm onSuccess={handleLogged} />
             </CardContent>
           </Card>
         </div>
 
         <div>
-          <h2 className="font-semibold text-lg mb-3">
+          <h2 className="text-base font-bold mb-3">
             History
             {!loading && (
               <span className="text-sm font-normal text-muted-foreground ml-2">
@@ -132,7 +138,9 @@ export default function WeightPage() {
           </h2>
 
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <div className="py-8">
+              <LoadingDots label="Loading weight entries" />
+            </div>
           ) : (
             <WeightList entries={entries} onDelete={handleDelete} />
           )}

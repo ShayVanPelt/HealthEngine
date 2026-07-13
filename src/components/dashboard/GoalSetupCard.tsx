@@ -27,6 +27,7 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [goal, setGoal] = useState<GoalData | null>(initialGoal);
 
   const [dailyCalories, setDailyCalories] = useState(String(initialGoal?.dailyCalories ?? ''));
@@ -39,7 +40,29 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
 
   const hasGoals = goal?.dailyCalories || goal?.weeklyWorkouts || goal?.targetWeight;
 
+  const validate = (): string | null => {
+    if (dailyCalories !== '') {
+      const v = Number(dailyCalories);
+      if (!Number.isInteger(v) || v < 0 || v > 50000) return 'Daily calories must be a whole number between 0 and 50,000.';
+    }
+    if (weeklyWorkouts !== '') {
+      const v = Number(weeklyWorkouts);
+      if (!Number.isInteger(v) || v < 0 || v > 14) return 'Weekly workouts must be a whole number between 0 and 14.';
+    }
+    if (targetWeight !== '') {
+      const v = Number(targetWeight);
+      if (!Number.isFinite(v) || v <= 0) return 'Enter a valid target weight greater than 0.';
+    }
+    return null;
+  };
+
   const handleSave = async () => {
+    const err = validate();
+    if (err) {
+      setFormError(err);
+      return;
+    }
+    setFormError('');
     setSaving(true);
     try {
       const res = await fetch('/api/goals', {
@@ -64,6 +87,7 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
   };
 
   const handleCancel = () => {
+    setFormError('');
     setDailyCalories(String(goal?.dailyCalories ?? ''));
     setWeeklyWorkouts(String(goal?.weeklyWorkouts ?? ''));
     setTargetWeight(
@@ -131,6 +155,7 @@ export default function GoalSetupCard({ goal: initialGoal }: GoalSetupCardProps)
               />
             </div>
           </div>
+          {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleCancel}>
               Cancel

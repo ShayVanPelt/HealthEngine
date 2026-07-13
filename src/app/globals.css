@@ -36,6 +36,10 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
+    /* Success — green-600 */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+
     /* Borders & inputs — zinc-200 */
     --border: 240 6% 90%;
     --input: 240 6% 90%;
@@ -78,6 +82,10 @@
     /* Destructive */
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
+
+    /* Success — green-400 */
+    --success: 142 69% 58%;
+    --success-foreground: 240 10% 4%;
 
     /* Borders & inputs — zinc-800 */
     --border: 240 4% 16%;

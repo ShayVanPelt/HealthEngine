@@ -32,7 +32,7 @@ function TrendChip({ trend }: { trend: StatCardTrend }) {
   let colorClass = 'text-muted-foreground';
   if (!isNeutral) {
     const goodDirection = positiveDirection === 'up' ? isPositive : !isPositive;
-    colorClass = goodDirection ? 'text-green-600 dark:text-green-400' : 'text-destructive';
+    colorClass = goodDirection ? 'text-success' : 'text-destructive';
   }
 
   const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
@@ -55,7 +55,7 @@ function ProgressBar({ progress }: { progress: StatCardProgress }) {
         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
           {progress.label ?? 'Goal'}
         </span>
-        <span className={cn('text-[10px] font-bold uppercase tracking-wider', over ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground')}>
+        <span className={cn('text-[10px] font-bold uppercase tracking-wider', over ? 'text-success' : 'text-muted-foreground')}>
           {pct}%
         </span>
       </div>
@@ -63,7 +63,7 @@ function ProgressBar({ progress }: { progress: StatCardProgress }) {
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500',
-            over ? 'bg-green-500' : pct >= 80 ? 'bg-primary' : 'bg-primary/60'
+            over ? 'bg-success' : pct >= 80 ? 'bg-primary' : 'bg-primary/60'
           )}
           style={{ width: `${pct}%` }}
         />
